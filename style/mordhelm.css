@@ -1,0 +1,33 @@
+@font-face {
+    font-family: "Deutsch Gothic";
+    src: url("Deutsch.ttf");
+}
+
+h1 {
+    font-family: "Deutsch Gothic", serif;
+    font-size: 100px;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+.row-header {
+    text-align: right;
+    font-weight: bold;
+    padding-right: 16px;
+}
+
+th {
+    border-bottom: 1px solid black;
+    text-align: left;
+}
+
+th, td {
+    height: 20px;
+    width: 20px;
+}
+
+table {
+    font-family: "Georgia", serif;
+}
