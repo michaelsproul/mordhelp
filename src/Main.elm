@@ -56,7 +56,7 @@ view : Model -> Document Msg
 view model =
     case model.page of
         GenericStats ->
-            { title = "Mordhelm: Rules", body = [ viewGenericStats ] }
+            { title = "Mordhelp: Rules", body = [ viewGenericStats ] }
 
 
 table2dRow : Int -> Int -> (Int -> Int -> String) -> List (Html Msg)
@@ -88,7 +88,7 @@ table2d width height f =
 viewGenericStats : Html Msg
 viewGenericStats =
     div []
-        [ h1 [] [ text "Mordhelm" ]
+        [ h1 [] [ text "Mordhelp" ]
         , table2d 10 10 (\attackerWs defenderWs -> String.fromInt (toHitByWs attackerWs defenderWs))
         ]
 
