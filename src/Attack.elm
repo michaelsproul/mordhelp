@@ -1,4 +1,4 @@
-module Attack exposing (toHitByWs)
+module Attack exposing (toHitByWs, toWoundByStrength)
 
 import Warband exposing (Profile, Unit)
 
