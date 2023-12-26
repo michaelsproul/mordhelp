@@ -1,0 +1,21 @@
+{
+  "units": [
+    {
+      "count": 1,
+      "profile": {
+        "name": "Witch Hunter Captain",
+        "kind": "hero",
+        "movement": 4,
+        "weaponSkill": 4,
+        "ballisticSkill": 4,
+        "strength": 3,
+        "toughness": 5,
+        "wounds": 1,
+        "initiative": 4,
+        "attacks": 1,
+        "leadership": 8
+      },
+      "equipment": []
+    }
+  ]
+}
