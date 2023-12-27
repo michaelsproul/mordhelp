@@ -29,6 +29,29 @@
           "rend": -2
         }
       ]
+    },
+    {
+      "count": 1,
+      "profile": {
+        "name": "Witch Hunter",
+        "kind": "hero",
+        "movement": 4,
+        "weaponSkill": 3,
+        "ballisticSkill": 3,
+        "strength": 3,
+        "toughness": 3,
+        "wounds": 1,
+        "initiative": 3,
+        "attacks": 1,
+        "leadership": 7
+      },
+      "equipment": [
+        {
+          "name": "Double-handed axe",
+          "kind": "melee",
+          "strength": "+2"
+        }
+      ]
     }
   ]
 }

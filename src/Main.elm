@@ -281,11 +281,11 @@ viewUnitMatchup unit enemyUnits =
         toWound weapon ( ( _, toughness ), _ ) =
             td [] [ text <| diceRoll <| toWoundByStrength (effectiveStrength weapon) toughness ]
 
-        strengthRend =
-            rendByStrength unit.profile.strength
+        strengthRend weapon =
+            rendByStrength (effectiveStrength weapon)
 
         getRend weapon =
-            td [] [ text <| renderRend <| Maybe.withDefault strengthRend weapon.rend ]
+            td [] [ text <| renderRend <| Maybe.withDefault (strengthRend weapon) weapon.rend ]
 
         buildRow equipment enemy =
             tr []
