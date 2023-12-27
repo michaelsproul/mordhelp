@@ -1,4 +1,5 @@
 {
+  "name": "Witch Hunters",
   "units": [
     {
       "count": 1,
@@ -9,13 +10,19 @@
         "weaponSkill": 4,
         "ballisticSkill": 4,
         "strength": 3,
-        "toughness": 5,
+        "toughness": 3,
         "wounds": 1,
         "initiative": 4,
         "attacks": 1,
         "leadership": 8
       },
-      "equipment": []
+      "equipment": [
+        {
+          "name": "sword",
+          "kind": "melee",
+          "strength": "+0"
+        }
+      ]
     }
   ]
 }

@@ -1,4 +1,13 @@
-module Warband exposing (Equipment, Profile, Unit, UnitKind, Warband, WeaponKind, WeaponStrength, decodeWarband)
+module Warband exposing
+    ( Equipment(..)
+    , Profile
+    , Unit
+    , UnitKind
+    , Warband
+    , WeaponKind
+    , WeaponStrength(..)
+    , decodeWarband
+    )
 
 import Json.Decode as Decode exposing (Decoder, int, list, string)
 import Json.Decode.Pipeline exposing (hardcoded, optional, required)
@@ -44,12 +53,15 @@ type WeaponStrength
     | StrengthMod Int
 
 
+type alias Weapon =
+    { name : String
+    , kind : WeaponKind
+    , strength : WeaponStrength
+    }
+
+
 type Equipment
-    = Weapon
-        { name : String
-        , kind : WeaponKind
-        , strength : WeaponStrength
-        }
+    = EquipmentWeapon Weapon
 
 
 type alias Unit =
@@ -60,7 +72,7 @@ type alias Unit =
 
 
 type alias Warband =
-    { units : List Unit }
+    { name : String, units : List Unit }
 
 
 decodeLiteral : String -> String -> Decoder String
@@ -134,7 +146,7 @@ decodeWeaponStrength =
 
 decodeEquipment : Decoder Equipment
 decodeEquipment =
-    Decode.succeed (\name kind strength -> Weapon { name = name, kind = kind, strength = strength })
+    Decode.succeed (\name kind strength -> EquipmentWeapon { name = name, kind = kind, strength = strength })
         |> required "name" string
         |> required "kind" decodeWeaponKind
         |> required "strength" decodeWeaponStrength
@@ -151,4 +163,5 @@ decodeUnit =
 decodeWarband : Decoder Warband
 decodeWarband =
     Decode.succeed Warband
+        |> required "name" string
         |> required "units" (list decodeUnit)

@@ -1,0 +1,22 @@
+{
+  "name": "Cult of the Possessed",
+  "units": [
+    {
+      "count": 1,
+      "profile": {
+        "name": "The Possessed",
+        "kind": "hero",
+        "movement": 5,
+        "weaponSkill": 4,
+        "ballisticSkill": 0,
+        "strength": 4,
+        "toughness": 4,
+        "wounds": 2,
+        "initiative": 4,
+        "attacks": 2,
+        "leadership": 7
+      },
+      "equipment": []
+    }
+  ]
+}

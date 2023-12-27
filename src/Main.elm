@@ -2,15 +2,33 @@ module Main exposing (..)
 
 import Attack exposing (toHitByWs, toWoundByStrength)
 import Browser exposing (Document)
+import Dict exposing (Dict)
 import File exposing (File)
 import File.Select as Select
-import Html exposing (Html, button, div, h1, span, table, tbody, td, text, th, thead, tr)
-import Html.Attributes exposing (class)
-import Html.Events exposing (onClick)
+import Html
+    exposing
+        ( Html
+        , button
+        , div
+        , h1
+        , option
+        , p
+        , select
+        , span
+        , table
+        , tbody
+        , td
+        , text
+        , th
+        , thead
+        , tr
+        )
+import Html.Attributes exposing (class, selected)
+import Html.Events exposing (onClick, onInput)
 import Json.Decode as Decode exposing (Decoder)
 import List exposing (map, range)
 import Task exposing (Task)
-import Warband exposing (Warband, decodeWarband)
+import Warband exposing (Equipment(..), Unit, Warband, WeaponStrength(..), decodeWarband)
 
 
 
@@ -33,12 +51,14 @@ type Page
 type alias Model =
     { page : Page
     , warband : Maybe Warband
+    , enemyWarband : Maybe Warband
+    , warbands : List Warband
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { page = WarbandInfo, warband = Nothing }, Cmd.none )
+    ( { page = WarbandInfo, warband = Nothing, enemyWarband = Nothing, warbands = [] }, Cmd.none )
 
 
 
@@ -46,9 +66,11 @@ init _ =
 
 
 type Msg
-    = WarbandRequested
-    | WarbandSelected File
+    = WarbandsRequested
+    | WarbandFilesSelected File (List File)
     | WarbandLoaded Warband
+    | WarbandSelected String
+    | EnemyWarbandSelected String
     | ChangePage Page
     | Noop
 
@@ -81,17 +103,62 @@ handleError f res =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        WarbandRequested ->
-            ( model, Select.file [ "application/json" ] WarbandSelected )
+        WarbandsRequested ->
+            ( model, Select.files [ "application/json" ] WarbandFilesSelected )
 
-        WarbandSelected file ->
-            ( model, Task.attempt (handleError WarbandLoaded) (File.toString file |> Task.andThen (runDecoder decodeWarband)) )
+        WarbandFilesSelected file files ->
+            let
+                processFile f =
+                    File.toString f |> Task.andThen (runDecoder decodeWarband)
+
+                fileTasks =
+                    List.map processFile (file :: files)
+
+                fileCommands =
+                    List.map (Task.attempt (handleError WarbandLoaded)) fileTasks
+            in
+            ( model, Cmd.batch fileCommands )
 
         WarbandLoaded warband ->
-            ( { page = model.page, warband = Just warband }, Cmd.none )
+            let
+                selectedWarband =
+                    if List.isEmpty model.warbands then
+                        Just warband
+
+                    else
+                        model.warband
+
+                enemyWarband =
+                    if List.length model.warbands == 1 then
+                        Just warband
+
+                    else
+                        model.enemyWarband
+            in
+            ( { model
+                | warband = selectedWarband
+                , enemyWarband = enemyWarband
+                , warbands = warband :: model.warbands
+              }
+            , Cmd.none
+            )
+
+        WarbandSelected name ->
+            let
+                warband =
+                    List.head (List.filter (\w -> w.name == name) model.warbands)
+            in
+            ( { model | warband = warband }, Cmd.none )
+
+        EnemyWarbandSelected name ->
+            let
+                warband =
+                    List.head (List.filter (\w -> w.name == name) model.warbands)
+            in
+            ( { model | enemyWarband = warband }, Cmd.none )
 
         ChangePage page ->
-            ( { page = page, warband = model.warband }, Cmd.none )
+            ( { model | page = page }, Cmd.none )
 
         Noop ->
             ( model, Cmd.none )
@@ -108,7 +175,7 @@ view model =
             { title = "Rules - Mordhelp", body = [ viewGenericStats ] }
 
         WarbandInfo ->
-            { title = "Warband - Mordhelp", body = [ viewWarband model.warband ] }
+            { title = "Warband - Mordhelp", body = [ viewWarband model ] }
 
 
 table2dRow : Int -> Int -> (Int -> Int -> String) -> List (Html Msg)
@@ -125,14 +192,14 @@ table2d width height f =
         columnHeaders =
             range 1 width |> map (\i -> th [] [ text (String.fromInt i) ])
 
-        rowHeader =
-            \row -> td [ class "row-header" ] [ text (String.fromInt row) ]
+        rowHeader row =
+            td [ class "row-header" ] [ text (String.fromInt row) ]
 
-        buildRow =
-            \row -> tr [] ([ rowHeader row ] ++ table2dRow width row f)
+        buildRow row =
+            tr [] (rowHeader row :: table2dRow width row f)
     in
     table []
-        [ thead [] [ tr [] ([ cornerHeader ] ++ columnHeaders) ]
+        [ thead [] [ tr [] (cornerHeader :: columnHeaders) ]
         , tbody [] (range 1 height |> map buildRow)
         ]
 
@@ -161,13 +228,118 @@ viewGenericStats =
         ]
 
 
-viewWarband : Maybe Warband -> Html Msg
-viewWarband maybeWarband =
-    div []
+diceRoll : Maybe Int -> String
+diceRoll maybeN =
+    maybeN
+        |> Maybe.map (\n -> String.fromInt n ++ "+")
+        |> Maybe.withDefault "-"
+
+
+viewUnitMatchup : Unit -> List ( ( Int, Int ), List Unit ) -> Html Msg
+viewUnitMatchup unit enemyUnits =
+    let
+        headers =
+            [ unit.profile.name
+            , "To hit"
+            , "To wound"
+            , "Rend"
+            ]
+                |> List.map (text >> List.singleton >> th [])
+
+        matchName equipment ( _, enemies ) =
+            td [] [ text <| equipment.name ++ " vs " ++ String.join ", " (List.map (.profile >> .name) enemies) ]
+
+        toHit equipment ( ( enemyWs, _ ), _ ) =
+            td [] [ text <| diceRoll <| Just <| toHitByWs unit.profile.weaponSkill enemyWs ]
+
+        effectiveStrength weapon =
+            case weapon.strength of
+                StrengthConst n ->
+                    n
+
+                StrengthMod n ->
+                    unit.profile.strength + n
+
+        toWound weapon ( ( _, toughness ), _ ) =
+            td [] [ text <| diceRoll <| toWoundByStrength (effectiveStrength weapon) toughness ]
+
+        buildRow equipment enemy =
+            tr []
+                [ matchName equipment enemy
+                , toHit equipment enemy
+                , toWound equipment enemy
+                ]
+
+        -- TODO: filter melee weapons only
+        weapons =
+            List.map (\(EquipmentWeapon w) -> w) unit.equipment
+
+        rows =
+            List.concatMap (\equipment -> List.map (buildRow equipment) enemyUnits) weapons
+    in
+    table [ class "unit-matchup" ]
+        [ thead [] headers
+        , tbody [] rows
+        ]
+
+
+
+-- Group by (ws, toughness)
+
+
+groupEnemyUnits : List Unit -> Dict ( Int, Int ) (List Unit)
+groupEnemyUnits units =
+    List.foldl
+        (\unit ->
+            Dict.update
+                ( unit.profile.weaponSkill, unit.profile.toughness )
+                (\existing -> Just (unit :: Maybe.withDefault [] existing))
+        )
+        Dict.empty
+        units
+
+
+
+-- TODO: ordered map?
+
+
+viewUnitMatchups : Unit -> Warband -> Html Msg
+viewUnitMatchups unit enemyWarband =
+    let
+        groups =
+            Dict.toList (groupEnemyUnits enemyWarband.units)
+    in
+    viewUnitMatchup unit groups
+
+
+viewAllUnitMatchups : Model -> List (Html Msg)
+viewAllUnitMatchups model =
+    case ( model.warband, model.enemyWarband ) of
+        ( Just w, Just ew ) ->
+            List.map (\unit -> viewUnitMatchups unit ew) w.units
+
+        ( _, _ ) ->
+            [ p [] [ text "Select a warband & enemy warband above" ] ]
+
+
+selectOptions : Maybe Warband -> List Warband -> List (Html Msg)
+selectOptions selectedWarband warbands =
+    List.map (\w -> option [ selected (Just w == selectedWarband) ] [ text w.name ]) warbands
+
+
+viewWarband : Model -> Html Msg
+viewWarband model =
+    div [] <|
         [ h1 [] [ text "Mordhelp" ]
         , siteNav
-        , button [ onClick WarbandRequested ] [ text "Upload Warband" ]
+        , button [ onClick WarbandsRequested ] [ text "Upload Warband(s)" ]
+        , p [] [ text "Select your warband: " ]
+        , select [ onInput WarbandSelected ] (selectOptions model.warband model.warbands)
+        , p [] [ text "Select enemy warband: " ]
+        , select [ onInput EnemyWarbandSelected ] (selectOptions model.enemyWarband model.warbands)
+        , p [] [ text (Maybe.withDefault "[[ Select your warband ]]" (Maybe.map .name model.warband)) ]
         ]
+            ++ viewAllUnitMatchups model
 
 
 
