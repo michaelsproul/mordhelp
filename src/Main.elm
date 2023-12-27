@@ -1,6 +1,6 @@
 module Main exposing (..)
 
-import Attack exposing (toHitByWs, toWoundByStrength)
+import Attack exposing (rendByStrength, toHitByWs, toWoundByStrength)
 import Browser exposing (Document)
 import Dict exposing (Dict)
 import File exposing (File)
@@ -28,7 +28,16 @@ import Html.Events exposing (onClick, onInput)
 import Json.Decode as Decode exposing (Decoder)
 import List exposing (map, range)
 import Task exposing (Task)
-import Warband exposing (Equipment(..), Unit, Warband, WeaponStrength(..), decodeWarband)
+import Warband
+    exposing
+        ( Equipment(..)
+        , Unit
+        , Warband
+        , WeaponKind(..)
+        , WeaponStrength(..)
+        , decodeWarband
+        , defaultWeapon
+        )
 
 
 
@@ -235,6 +244,15 @@ diceRoll maybeN =
         |> Maybe.withDefault "-"
 
 
+renderRend : Int -> String
+renderRend n =
+    if n == 0 then
+        "-"
+
+    else
+        String.fromInt n
+
+
 viewUnitMatchup : Unit -> List ( ( Int, Int ), List Unit ) -> Html Msg
 viewUnitMatchup unit enemyUnits =
     let
@@ -263,16 +281,37 @@ viewUnitMatchup unit enemyUnits =
         toWound weapon ( ( _, toughness ), _ ) =
             td [] [ text <| diceRoll <| toWoundByStrength (effectiveStrength weapon) toughness ]
 
+        strengthRend =
+            rendByStrength unit.profile.strength
+
+        getRend weapon =
+            td [] [ text <| renderRend <| Maybe.withDefault strengthRend weapon.rend ]
+
         buildRow equipment enemy =
             tr []
                 [ matchName equipment enemy
                 , toHit equipment enemy
                 , toWound equipment enemy
+                , getRend equipment
                 ]
 
-        -- TODO: filter melee weapons only
+        equippedWeapons =
+            List.filterMap
+                (\(EquipmentWeapon w) ->
+                    if w.kind == Melee then
+                        Just w
+
+                    else
+                        Nothing
+                )
+                unit.equipment
+
         weapons =
-            List.map (\(EquipmentWeapon w) -> w) unit.equipment
+            if List.isEmpty equippedWeapons then
+                [ defaultWeapon ]
+
+            else
+                equippedWeapons
 
         rows =
             List.concatMap (\equipment -> List.map (buildRow equipment) enemyUnits) weapons

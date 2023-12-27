@@ -1,4 +1,4 @@
-module Attack exposing (toHitByWs, toWoundByStrength)
+module Attack exposing (rendByStrength, toHitByWs, toWoundByStrength)
 
 import Warband exposing (Profile, Unit)
 
@@ -35,3 +35,8 @@ toWoundByStrength strength toughness =
 
     else
         Just (max (4 - strength + toughness) 2)
+
+
+rendByStrength : Int -> Int
+rendByStrength strength =
+    max (min (3 - strength) 0) -6

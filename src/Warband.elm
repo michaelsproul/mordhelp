@@ -4,12 +4,13 @@ module Warband exposing
     , Unit
     , UnitKind
     , Warband
-    , WeaponKind
+    , WeaponKind(..)
     , WeaponStrength(..)
     , decodeWarband
+    , defaultWeapon
     )
 
-import Json.Decode as Decode exposing (Decoder, int, list, string)
+import Json.Decode as Decode exposing (Decoder, int, list, maybe, string)
 import Json.Decode.Pipeline exposing (hardcoded, optional, required)
 
 
@@ -57,6 +58,7 @@ type alias Weapon =
     { name : String
     , kind : WeaponKind
     , strength : WeaponStrength
+    , rend : Maybe Int
     }
 
 
@@ -73,6 +75,11 @@ type alias Unit =
 
 type alias Warband =
     { name : String, units : List Unit }
+
+
+defaultWeapon : Weapon
+defaultWeapon =
+    { name = "Unarmed strike", kind = Melee, strength = StrengthMod 0, rend = Nothing }
 
 
 decodeLiteral : String -> String -> Decoder String
@@ -146,10 +153,19 @@ decodeWeaponStrength =
 
 decodeEquipment : Decoder Equipment
 decodeEquipment =
-    Decode.succeed (\name kind strength -> EquipmentWeapon { name = name, kind = kind, strength = strength })
+    Decode.succeed
+        (\name kind strength rend ->
+            EquipmentWeapon
+                { name = name
+                , kind = kind
+                , strength = strength
+                , rend = rend
+                }
+        )
         |> required "name" string
         |> required "kind" decodeWeaponKind
         |> required "strength" decodeWeaponStrength
+        |> optional "rend" (maybe int) Nothing
 
 
 decodeUnit : Decoder Unit

@@ -18,9 +18,15 @@
       },
       "equipment": [
         {
-          "name": "sword",
+          "name": "Sword",
           "kind": "melee",
           "strength": "+0"
+        },
+        {
+          "name": "Pistol (melee)",
+          "kind": "melee",
+          "strength": "4",
+          "rend": -2
         }
       ]
     }

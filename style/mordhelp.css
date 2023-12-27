@@ -18,6 +18,10 @@ table {
     padding-right: 16px;
 }
 
+.unit-matchup {
+    width: 80%;
+}
+
 th {
     border-bottom: 1px solid black;
     text-align: left;
