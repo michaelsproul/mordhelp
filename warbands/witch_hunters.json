@@ -27,6 +27,12 @@
           "kind": "melee",
           "strength": "abs4",
           "rend": "abs-2"
+        },
+        {
+          "name": "Pistol (ranged)",
+          "kind": "ballistic",
+          "strength": "abs4",
+          "rend": "abs-2"
         }
       ]
     },
@@ -123,7 +129,7 @@
         },
         {
           "name": "Crossbow",
-          "kind": "melee",
+          "kind": "ballistic",
           "strength": "abs4",
 	  "rend": "mod-1"
         }

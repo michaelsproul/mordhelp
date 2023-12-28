@@ -1,6 +1,6 @@
 module Main exposing (..)
 
-import Attack exposing (rendByStrength, toHitByWs, toWoundByStrength)
+import Attack exposing (rendByStrength, toHitBallistic, toHitByWs, toWoundByStrength)
 import Browser exposing (Document)
 import Dict exposing (Dict)
 import File exposing (File)
@@ -255,8 +255,8 @@ renderRend n =
         String.fromInt n
 
 
-viewUnitMatchup : Unit -> List ( ( Int, Int ), Set String ) -> Html Msg
-viewUnitMatchup unit enemyUnits =
+viewUnitMatchup : Unit -> List ( ( Int, Int ), Set String ) -> List ( Int, Set String ) -> Html Msg
+viewUnitMatchup unit enemyUnitsByWsToughness enemyUnitsByToughness =
     let
         headers =
             [ unit.profile.name
@@ -272,6 +272,9 @@ viewUnitMatchup unit enemyUnits =
         toHit equipment ( ( enemyWs, _ ), _ ) =
             td [] [ text <| diceRoll <| Just <| toHitByWs unit.profile.weaponSkill enemyWs ]
 
+        toHitBallisticCell =
+            td [] [ text <| diceRoll <| Just <| toHitBallistic unit.profile.ballisticSkill ]
+
         effectiveStrength weapon =
             case weapon.strength of
                 ModifierAbs n ->
@@ -280,7 +283,7 @@ viewUnitMatchup unit enemyUnits =
                 ModifierMod n ->
                     unit.profile.strength + n
 
-        toWound weapon ( ( _, toughness ), _ ) =
+        toWound weapon toughness =
             td [] [ text <| diceRoll <| toWoundByStrength (effectiveStrength weapon) toughness ]
 
         effectiveRend weapon =
@@ -301,34 +304,52 @@ viewUnitMatchup unit enemyUnits =
         getRend weapon =
             td [] [ text <| renderRend <| effectiveRend weapon ]
 
-        buildRow equipment enemy =
+        buildMeleeRow equipment enemy =
             tr []
                 [ matchName equipment enemy
                 , toHit equipment enemy
-                , toWound equipment enemy
+                , toWound equipment (Tuple.first enemy |> Tuple.second)
+                , getRend equipment
+                ]
+
+        buildBallisticRow equipment enemy =
+            tr []
+                [ matchName equipment enemy
+                , toHitBallisticCell
+                , toWound equipment (Tuple.first enemy)
                 , getRend equipment
                 ]
 
         equippedWeapons =
-            List.filterMap
-                (\(EquipmentWeapon w) ->
-                    if w.kind == Melee then
-                        Just w
+            List.map (\(EquipmentWeapon w) -> w) unit.equipment
 
-                    else
-                        Nothing
+        ( equippedMeleeWeapons, ballisticWeapons ) =
+            List.partition
+                (\w ->
+                    case w.kind of
+                        Melee ->
+                            True
+
+                        Ballistic ->
+                            False
                 )
-                unit.equipment
+                equippedWeapons
 
-        weapons =
-            if List.isEmpty equippedWeapons then
+        meleeWeapons =
+            if List.isEmpty equippedMeleeWeapons then
                 [ defaultWeapon ]
 
             else
-                equippedWeapons
+                equippedMeleeWeapons
+
+        meleeRows =
+            List.concatMap (\equipment -> List.map (buildMeleeRow equipment) enemyUnitsByWsToughness) meleeWeapons
+
+        ballisticRows =
+            List.concatMap (\equipment -> List.map (buildBallisticRow equipment) enemyUnitsByToughness) ballisticWeapons
 
         rows =
-            List.concatMap (\equipment -> List.map (buildRow equipment) enemyUnits) weapons
+            meleeRows ++ ballisticRows
     in
     table [ class "unit-matchup" ]
         [ thead [] headers
@@ -337,32 +358,42 @@ viewUnitMatchup unit enemyUnits =
 
 
 
--- Group by (ws, toughness)
+-- Group by (ws, toughness) for melee attacks and (toughness)
 
 
-groupEnemyUnits : List Unit -> Dict ( Int, Int ) (Set String)
+groupEnemyUnits : List Unit -> ( Dict ( Int, Int ) (Set String), Dict Int (Set String) )
 groupEnemyUnits units =
     List.foldl
-        (\unit ->
-            Dict.update
+        (\unit ( byWsToughness, byToughness ) ->
+            ( Dict.update
                 ( unit.profile.weaponSkill, unit.profile.toughness )
                 (\existing -> Just (Set.insert unit.profile.name (Maybe.withDefault Set.empty existing)))
+                byWsToughness
+            , Dict.update
+                unit.profile.toughness
+                (\existing -> Just (Set.insert unit.profile.name (Maybe.withDefault Set.empty existing)))
+                byToughness
+            )
         )
-        Dict.empty
+        ( Dict.empty, Dict.empty )
         units
-
-
-
--- TODO: ordered map?
 
 
 viewUnitMatchups : Unit -> Warband -> Html Msg
 viewUnitMatchups unit enemyWarband =
     let
-        groups =
-            Dict.toList (groupEnemyUnits enemyWarband.units)
+        ( meleeGroups, ballisticGroups ) =
+            groupEnemyUnits enemyWarband.units
+
+        sortedMeleeGroups =
+            List.sortBy
+                (\( ( ws, toughness ), unitNames ) -> ( ws, toughness, Set.size unitNames ))
+                (Dict.toList meleeGroups)
+
+        sortedBallisticGroups =
+            List.sortBy (\( toughness, _ ) -> toughness) (Dict.toList ballisticGroups)
     in
-    viewUnitMatchup unit groups
+    viewUnitMatchup unit sortedMeleeGroups sortedBallisticGroups
 
 
 viewAllUnitMatchups : Model -> List (Html Msg)

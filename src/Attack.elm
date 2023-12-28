@@ -1,4 +1,4 @@
-module Attack exposing (rendByStrength, toHitByWs, toWoundByStrength)
+module Attack exposing (rendByStrength, toHitBallistic, toHitByWs, toWoundByStrength)
 
 import Warband exposing (Profile, Unit)
 
@@ -40,3 +40,8 @@ toWoundByStrength strength toughness =
 rendByStrength : Int -> Int
 rendByStrength strength =
     max (min (3 - strength) 0) -6
+
+
+toHitBallistic : Int -> Int
+toHitBallistic bs =
+    7 - bs
