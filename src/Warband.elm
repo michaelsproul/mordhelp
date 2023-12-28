@@ -1,11 +1,12 @@
 module Warband exposing
     ( Equipment(..)
+    , Modifier(..)
     , Profile
     , Unit
     , UnitKind
     , Warband
     , WeaponKind(..)
-    , WeaponStrength(..)
+    , WeaponStrength
     , decodeWarband
     , defaultWeapon
     )
@@ -49,16 +50,24 @@ type WeaponKind
     | Ballistic
 
 
-type WeaponStrength
-    = StrengthConst Int
-    | StrengthMod Int
+type Modifier
+    = ModifierAbs Int
+    | ModifierMod Int
+
+
+type alias WeaponStrength =
+    Modifier
+
+
+type alias WeaponRend =
+    Modifier
 
 
 type alias Weapon =
     { name : String
     , kind : WeaponKind
     , strength : WeaponStrength
-    , rend : Maybe Int
+    , rend : Maybe WeaponRend
     }
 
 
@@ -79,7 +88,7 @@ type alias Warband =
 
 defaultWeapon : Weapon
 defaultWeapon =
-    { name = "Unarmed strike", kind = Melee, strength = StrengthMod 0, rend = Nothing }
+    { name = "Unarmed strike", kind = Melee, strength = ModifierMod 0, rend = Nothing }
 
 
 decodeLiteral : String -> String -> Decoder String
@@ -128,26 +137,29 @@ decodeProfile =
         |> required "leadership" int
 
 
-decodeWeaponStrength : Decoder WeaponStrength
-decodeWeaponStrength =
+decodeModifier : Decoder Modifier
+decodeModifier =
     string
         |> Decode.andThen
             (\s ->
-                if String.startsWith "+" s then
-                    case String.toInt (String.dropLeft 1 s) of
+                if String.startsWith "mod" s then
+                    case String.toInt (String.dropLeft 3 s) of
                         Just n ->
-                            Decode.succeed (StrengthMod n)
+                            Decode.succeed (ModifierMod n)
 
                         Nothing ->
-                            Decode.fail <| "invalid strength mod: " ++ s
+                            Decode.fail <| "invalid modifier: " ++ s
+
+                else if String.startsWith "abs" s then
+                    case String.toInt (String.dropLeft 3 s) of
+                        Just n ->
+                            Decode.succeed (ModifierAbs n)
+
+                        Nothing ->
+                            Decode.fail <| "invalid absolute modifier: " ++ s
 
                 else
-                    case String.toInt s of
-                        Just n ->
-                            Decode.succeed (StrengthConst n)
-
-                        Nothing ->
-                            Decode.fail <| "invalid strength const: " ++ s
+                    Decode.fail <| "invalid modifier: " ++ s
             )
 
 
@@ -164,8 +176,8 @@ decodeEquipment =
         )
         |> required "name" string
         |> required "kind" decodeWeaponKind
-        |> required "strength" decodeWeaponStrength
-        |> optional "rend" (maybe int) Nothing
+        |> required "strength" decodeModifier
+        |> optional "rend" (maybe decodeModifier) Nothing
 
 
 decodeUnit : Decoder Unit

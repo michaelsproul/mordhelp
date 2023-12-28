@@ -27,14 +27,16 @@ import Html.Attributes exposing (class, selected)
 import Html.Events exposing (onClick, onInput)
 import Json.Decode as Decode exposing (Decoder)
 import List exposing (map, range)
+import Set exposing (Set)
 import Task exposing (Task)
 import Warband
     exposing
         ( Equipment(..)
+        , Modifier(..)
         , Unit
         , Warband
         , WeaponKind(..)
-        , WeaponStrength(..)
+        , WeaponStrength
         , decodeWarband
         , defaultWeapon
         )
@@ -253,7 +255,7 @@ renderRend n =
         String.fromInt n
 
 
-viewUnitMatchup : Unit -> List ( ( Int, Int ), List Unit ) -> Html Msg
+viewUnitMatchup : Unit -> List ( ( Int, Int ), Set String ) -> Html Msg
 viewUnitMatchup unit enemyUnits =
     let
         headers =
@@ -265,27 +267,39 @@ viewUnitMatchup unit enemyUnits =
                 |> List.map (text >> List.singleton >> th [])
 
         matchName equipment ( _, enemies ) =
-            td [] [ text <| equipment.name ++ " vs " ++ String.join ", " (List.map (.profile >> .name) enemies) ]
+            td [] [ text <| equipment.name ++ " vs " ++ String.join ", " (Set.toList enemies) ]
 
         toHit equipment ( ( enemyWs, _ ), _ ) =
             td [] [ text <| diceRoll <| Just <| toHitByWs unit.profile.weaponSkill enemyWs ]
 
         effectiveStrength weapon =
             case weapon.strength of
-                StrengthConst n ->
+                ModifierAbs n ->
                     n
 
-                StrengthMod n ->
+                ModifierMod n ->
                     unit.profile.strength + n
 
         toWound weapon ( ( _, toughness ), _ ) =
             td [] [ text <| diceRoll <| toWoundByStrength (effectiveStrength weapon) toughness ]
 
-        strengthRend weapon =
-            rendByStrength (effectiveStrength weapon)
+        effectiveRend weapon =
+            let
+                rend =
+                    rendByStrength (effectiveStrength weapon)
+            in
+            case weapon.rend of
+                Just (ModifierAbs n) ->
+                    n
+
+                Just (ModifierMod n) ->
+                    rend + n
+
+                Nothing ->
+                    rend
 
         getRend weapon =
-            td [] [ text <| renderRend <| Maybe.withDefault (strengthRend weapon) weapon.rend ]
+            td [] [ text <| renderRend <| effectiveRend weapon ]
 
         buildRow equipment enemy =
             tr []
@@ -326,13 +340,13 @@ viewUnitMatchup unit enemyUnits =
 -- Group by (ws, toughness)
 
 
-groupEnemyUnits : List Unit -> Dict ( Int, Int ) (List Unit)
+groupEnemyUnits : List Unit -> Dict ( Int, Int ) (Set String)
 groupEnemyUnits units =
     List.foldl
         (\unit ->
             Dict.update
                 ( unit.profile.weaponSkill, unit.profile.toughness )
-                (\existing -> Just (unit :: Maybe.withDefault [] existing))
+                (\existing -> Just (Set.insert unit.profile.name (Maybe.withDefault Set.empty existing)))
         )
         Dict.empty
         units

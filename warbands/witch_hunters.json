@@ -20,13 +20,36 @@
         {
           "name": "Sword",
           "kind": "melee",
-          "strength": "+0"
+          "strength": "mod+0"
         },
         {
           "name": "Pistol (melee)",
           "kind": "melee",
-          "strength": "4",
-          "rend": -2
+          "strength": "abs4",
+          "rend": "abs-2"
+        }
+      ]
+    },
+    {
+      "count": 1,
+      "profile": {
+        "name": "Warrior Priest",
+        "kind": "hero",
+        "movement": 4,
+        "weaponSkill": 3,
+        "ballisticSkill": 3,
+        "strength": 3,
+        "toughness": 3,
+        "wounds": 1,
+        "initiative": 3,
+        "attacks": 1,
+        "leadership": 8
+      },
+      "equipment": [
+        {
+          "name": "Hammer",
+          "kind": "melee",
+          "strength": "mod+0"
         }
       ]
     },
@@ -49,7 +72,60 @@
         {
           "name": "Double-handed axe",
           "kind": "melee",
-          "strength": "+2"
+          "strength": "mod+2"
+        }
+      ]
+    },
+    {
+      "count": 1,
+      "profile": {
+        "name": "Witch Hunter",
+        "kind": "hero",
+        "movement": 4,
+        "weaponSkill": 3,
+        "ballisticSkill": 3,
+        "strength": 3,
+        "toughness": 3,
+        "wounds": 1,
+        "initiative": 3,
+        "attacks": 1,
+        "leadership": 7
+      },
+      "equipment": [
+        {
+          "name": "Axe",
+          "kind": "melee",
+          "strength": "mod+0",
+	  "rend": "mod-1"
+        }
+      ]
+    },
+    {
+      "count": 1,
+      "profile": {
+        "name": "Witch Hunter",
+        "kind": "hero",
+        "movement": 4,
+        "weaponSkill": 3,
+        "ballisticSkill": 3,
+        "strength": 3,
+        "toughness": 3,
+        "wounds": 1,
+        "initiative": 3,
+        "attacks": 1,
+        "leadership": 7
+      },
+      "equipment": [
+        {
+          "name": "Dagger",
+          "kind": "melee",
+          "strength": "mod+0"
+        },
+        {
+          "name": "Crossbow",
+          "kind": "melee",
+          "strength": "abs4",
+	  "rend": "mod-1"
         }
       ]
     }
