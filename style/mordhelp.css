@@ -3,9 +3,22 @@
     src: url("Deutsch.ttf");
 }
 
+body {
+    font-size: calc(16px + 1vw);
+}
+
 h1 {
     font-family: "Deutsch Gothic", serif;
-    font-size: 100px;
+    font-size: calc(48px + 3vw);
+}
+
+table {
+    font-family: "Georgia", serif;
+    font-size: calc(16px + 1vw);
+}
+
+button, select {
+    font-size: calc(16px + 1vw);
 }
 
 table {
@@ -19,19 +32,26 @@ table {
 }
 
 .unit-matchup {
-    width: 80%;
+    width: 100%;
+}
+
+.unit-matchup th {
+    padding: 6px;
+}
+
+.unit-matchup td {
+    padding: 6px;
+}
+
+/* Set max width for first column of unit-matchup */
+.unit-matchup th:nth-child(1) {
+    max-width: 15em;
+}
+.unit-matchup td:nth-child(1) {
+    max-width: 15em;
 }
 
 th {
     border-bottom: 1px solid black;
     text-align: left;
-}
-
-th, td {
-    height: 20px;
-    width: 20px;
-}
-
-table {
-    font-family: "Georgia", serif;
 }
