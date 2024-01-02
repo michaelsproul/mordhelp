@@ -55,3 +55,19 @@ th {
     border-bottom: 1px solid black;
     text-align: left;
 }
+
+/* Nav formatting */
+.nav span {
+    padding: 0.5em;
+    border-right: 1px solid black;
+
+}
+
+.nav {
+    padding-bottom: 1em;
+}
+
+.footer {
+    text-align: right;
+    padding-right: 1em;
+}

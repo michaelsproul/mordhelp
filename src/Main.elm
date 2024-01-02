@@ -8,6 +8,7 @@ import File.Select as Select
 import Html
     exposing
         ( Html
+        , a
         , button
         , div
         , h1
@@ -23,7 +24,7 @@ import Html
         , thead
         , tr
         )
-import Html.Attributes exposing (class, selected)
+import Html.Attributes exposing (class, href, selected)
 import Html.Events exposing (onClick, onInput)
 import Json.Decode as Decode exposing (Decoder)
 import List exposing (map, range)
@@ -217,7 +218,7 @@ table2d width height f =
 
 siteNav : Html Msg
 siteNav =
-    div []
+    div [ class "nav" ]
         [ span [ onClick (ChangePage GenericStats) ] [ text "Stats" ]
         , span [ onClick (ChangePage WarbandInfo) ] [ text "Warband" ]
         ]
@@ -403,12 +404,22 @@ viewAllUnitMatchups model =
             List.map (\unit -> viewUnitMatchups unit ew) w.units
 
         ( _, _ ) ->
-            [ p [] [ text "Select a warband & enemy warband above" ] ]
+            [ p [] [ text "Upload warbands then select a warband & enemy warband above" ] ]
 
 
 selectOptions : Maybe Warband -> List Warband -> List (Html Msg)
 selectOptions selectedWarband warbands =
     List.map (\w -> option [ selected (Just w == selectedWarband) ] [ text w.name ]) warbands
+
+
+repoUrl : String
+repoUrl =
+    "https://github.com/michaelsproul/mordhelp"
+
+
+viewFooter : Html Msg
+viewFooter =
+    p [ class "footer" ] [ text "Source available on ", a [ href repoUrl ] [ text "GitHub" ] ]
 
 
 viewWarband : Model -> Html Msg
@@ -421,9 +432,9 @@ viewWarband model =
         , select [ onInput WarbandSelected ] (selectOptions model.warband model.warbands)
         , p [] [ text "Select enemy warband: " ]
         , select [ onInput EnemyWarbandSelected ] (selectOptions model.enemyWarband model.warbands)
-        , p [] [ text (Maybe.withDefault "[[ Select your warband ]]" (Maybe.map .name model.warband)) ]
         ]
             ++ viewAllUnitMatchups model
+            ++ [ viewFooter ]
 
 
 
