@@ -12,6 +12,7 @@ import Html
         , button
         , div
         , h1
+        , h2
         , option
         , p
         , select
@@ -56,7 +57,7 @@ main =
 
 
 type Page
-    = GenericStats
+    = GenericRules
     | WarbandInfo
 
 
@@ -183,8 +184,8 @@ update msg model =
 view : Model -> Document Msg
 view model =
     case model.page of
-        GenericStats ->
-            { title = "Rules - Mordhelp", body = [ viewGenericStats ] }
+        GenericRules ->
+            { title = "Rules - Mordhelp", body = [ viewGenericRules ] }
 
         WarbandInfo ->
             { title = "Warband - Mordhelp", body = [ viewWarband model ] }
@@ -219,17 +220,19 @@ table2d width height f =
 siteNav : Html Msg
 siteNav =
     div [ class "nav" ]
-        [ span [ onClick (ChangePage GenericStats) ] [ text "Stats" ]
-        , span [ onClick (ChangePage WarbandInfo) ] [ text "Warband" ]
+        [ span [ onClick (ChangePage GenericRules) ] [ text "Rules" ]
+        , span [ onClick (ChangePage WarbandInfo) ] [ text "Matchups" ]
         ]
 
 
-viewGenericStats : Html Msg
-viewGenericStats =
+viewGenericRules : Html Msg
+viewGenericRules =
     div []
         [ h1 [] [ text "Mordhelp" ]
         , siteNav
+        , h2 [] [ text "To hit" ]
         , table2d 10 10 (\attackerWs defenderWs -> String.fromInt (toHitByWs attackerWs defenderWs))
+        , h2 [] [ text "To wound" ]
         , table2d 10
             10
             (\strength toughness ->
@@ -256,7 +259,11 @@ renderRend n =
         String.fromInt n
 
 
-viewUnitMatchup : Unit -> List ( ( Int, Int ), Set String ) -> List ( Int, Set String ) -> Html Msg
+viewUnitMatchup :
+    Unit
+    -> List ( ( Int, Int ), Set String )
+    -> List ( Int, Set String )
+    -> List (Html Msg)
 viewUnitMatchup unit enemyUnitsByWsToughness enemyUnitsByToughness =
     let
         headers =
@@ -352,10 +359,9 @@ viewUnitMatchup unit enemyUnitsByWsToughness enemyUnitsByToughness =
         rows =
             meleeRows ++ ballisticRows
     in
-    table [ class "unit-matchup" ]
-        [ thead [] headers
-        , tbody [] rows
-        ]
+    [ thead [] headers
+    , tbody [] rows
+    ]
 
 
 
@@ -380,7 +386,7 @@ groupEnemyUnits units =
         units
 
 
-viewUnitMatchups : Unit -> Warband -> Html Msg
+viewUnitMatchups : Unit -> Warband -> List (Html Msg)
 viewUnitMatchups unit enemyWarband =
     let
         ( meleeGroups, ballisticGroups ) =
@@ -397,14 +403,15 @@ viewUnitMatchups unit enemyWarband =
     viewUnitMatchup unit sortedMeleeGroups sortedBallisticGroups
 
 
-viewAllUnitMatchups : Model -> List (Html Msg)
+viewAllUnitMatchups : Model -> Html Msg
 viewAllUnitMatchups model =
     case ( model.warband, model.enemyWarband ) of
         ( Just w, Just ew ) ->
-            List.map (\unit -> viewUnitMatchups unit ew) w.units
+            table [ class "unit-matchup" ] <|
+                List.concatMap (\unit -> viewUnitMatchups unit ew) w.units
 
         ( _, _ ) ->
-            [ p [] [ text "Upload warbands then select a warband & enemy warband above" ] ]
+            p [] [ text "Upload warbands then select a warband & enemy warband above" ]
 
 
 selectOptions : Maybe Warband -> List Warband -> List (Html Msg)
@@ -433,7 +440,7 @@ viewWarband model =
         , p [] [ text "Select enemy warband: " ]
         , select [ onInput EnemyWarbandSelected ] (selectOptions model.enemyWarband model.warbands)
         ]
-            ++ viewAllUnitMatchups model
+            ++ [ viewAllUnitMatchups model ]
             ++ [ viewFooter ]
 
 

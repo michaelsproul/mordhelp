@@ -1,6 +1,23 @@
 {
   "name": "Cult of the Possessed",
   "units": [
+      {
+      "count": 1,
+      "profile": {
+        "name": "Magister",
+        "kind": "hero",
+        "movement": 4,
+        "weaponSkill": 4,
+        "ballisticSkill": 4,
+        "strength": 3,
+        "toughness": 3,
+        "wounds": 1,
+        "initiative": 3,
+        "attacks": 1,
+        "leadership": 8
+      },
+      "equipment": []
+    },
     {
       "count": 1,
       "profile": {
@@ -14,6 +31,23 @@
         "wounds": 2,
         "initiative": 4,
         "attacks": 2,
+        "leadership": 7
+      },
+      "equipment": []
+    },
+    {
+      "count": 1,
+      "profile": {
+        "name": "Mutant",
+        "kind": "hero",
+        "movement": 4,
+        "weaponSkill": 3,
+        "ballisticSkill": 3,
+        "strength": 3,
+        "toughness": 3,
+        "wounds": 1,
+        "initiative": 3,
+        "attacks": 1,
         "leadership": 7
       },
       "equipment": []

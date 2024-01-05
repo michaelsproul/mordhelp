@@ -102,7 +102,7 @@
           "name": "Axe",
           "kind": "melee",
           "strength": "mod+0",
-	  "rend": "mod-1"
+          "rend": "mod-1"
         }
       ]
     },
@@ -131,9 +131,72 @@
           "name": "Crossbow",
           "kind": "ballistic",
           "strength": "abs4",
-	  "rend": "mod-1"
+          "rend": "mod-1"
         }
       ]
+    },
+    {
+      "count": 2,
+      "profile": {
+        "name": "Flagellant",
+        "kind": "henchman",
+        "movement": 4,
+        "weaponSkill": 3,
+        "ballisticSkill": 3,
+        "strength": 4,
+        "toughness": 4,
+        "wounds": 1,
+        "initiative": 3,
+        "attacks": 1,
+        "leadership": 10
+      },
+      "equipment": [
+        {
+          "name": "Flail",
+          "kind": "melee",
+          "strength": "mod+2"
+        }
+      ]
+    },
+    {
+      "count": 1,
+      "profile": {
+        "name": "Flagellant",
+        "kind": "henchman",
+        "movement": 4,
+        "weaponSkill": 3,
+        "ballisticSkill": 3,
+        "strength": 4,
+        "toughness": 4,
+        "wounds": 1,
+        "initiative": 3,
+        "attacks": 1,
+        "leadership": 10
+      },
+      "equipment": [
+        {
+          "name": "Double-handed axe",
+          "kind": "melee",
+          "strength": "mod+2"
+        }
+      ]
+    },
+    {
+      "count": 2,
+      "profile": {
+        "name": "Warhound",
+        "kind": "hero",
+        "movement": 6,
+        "weaponSkill": 4,
+        "ballisticSkill": 0,
+        "strength": 4,
+        "toughness": 3,
+        "wounds": 1,
+        "initiative": 4,
+        "attacks": 1,
+        "leadership": 5
+      },
+      "equipment": []
     }
   ]
 }
