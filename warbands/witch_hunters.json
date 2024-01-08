@@ -1,8 +1,14 @@
 {
   "name": "Witch Hunters",
+  "treasury": {
+    "gold": 7,
+    "wyrdstone": 0
+  },
   "units": [
     {
+      "name": "Haskell Hexbane",
       "count": 1,
+      "xp": 0,
       "profile": {
         "name": "Witch Hunter Captain",
         "kind": "hero",
@@ -37,7 +43,9 @@
       ]
     },
     {
+      "name": "Pascal Pious",
       "count": 1,
+      "xp": 0,
       "profile": {
         "name": "Warrior Priest",
         "kind": "hero",
@@ -60,7 +68,9 @@
       ]
     },
     {
+      "name": "Monty Python",
       "count": 1,
+      "xp": 0,
       "profile": {
         "name": "Witch Hunter",
         "kind": "hero",
@@ -83,7 +93,9 @@
       ]
     },
     {
+      "name": "Ruby Rampage",
       "count": 1,
+      "xp": 0,
       "profile": {
         "name": "Witch Hunter",
         "kind": "hero",
@@ -107,7 +119,9 @@
       ]
     },
     {
+      "name": "Idris Elbow",
       "count": 1,
+      "xp": 0,
       "profile": {
         "name": "Witch Hunter",
         "kind": "hero",
@@ -136,7 +150,9 @@
       ]
     },
     {
+      "name": "Flail Flaggies",
       "count": 2,
+      "xp": 0,
       "profile": {
         "name": "Flagellant",
         "kind": "henchman",
@@ -159,7 +175,9 @@
       ]
     },
     {
+      "name": "Axe Flaggies",
       "count": 1,
+      "xp": 0,
       "profile": {
         "name": "Flagellant",
         "kind": "henchman",
@@ -182,7 +200,9 @@
       ]
     },
     {
+      "name": "Dawgs",
       "count": 2,
+      "xp": 0,
       "profile": {
         "name": "Warhound",
         "kind": "hero",

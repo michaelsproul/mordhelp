@@ -25,7 +25,7 @@ import Html
         , thead
         , tr
         )
-import Html.Attributes exposing (class, href, selected)
+import Html.Attributes exposing (class, colspan, href, selected)
 import Html.Events exposing (onClick, onInput)
 import Json.Decode as Decode exposing (Decoder)
 import List exposing (map, range)
@@ -35,6 +35,7 @@ import Warband
     exposing
         ( Equipment(..)
         , Modifier(..)
+        , Profile
         , Unit
         , Warband
         , WeaponKind(..)
@@ -59,6 +60,7 @@ main =
 type Page
     = GenericRules
     | WarbandInfo
+    | Matchups
 
 
 type alias Model =
@@ -190,6 +192,9 @@ view model =
         WarbandInfo ->
             { title = "Warband - Mordhelp", body = [ viewWarband model ] }
 
+        Matchups ->
+            { title = "Warband - Mordhelp", body = [ viewMatchups model ] }
+
 
 table2dRow : Int -> Int -> (Int -> Int -> String) -> List (Html Msg)
 table2dRow width row f =
@@ -221,7 +226,8 @@ siteNav : Html Msg
 siteNav =
     div [ class "nav" ]
         [ span [ onClick (ChangePage GenericRules) ] [ text "Rules" ]
-        , span [ onClick (ChangePage WarbandInfo) ] [ text "Matchups" ]
+        , span [ onClick (ChangePage WarbandInfo) ] [ text "Warband" ]
+        , span [ onClick (ChangePage Matchups) ] [ text "Matchups" ]
         ]
 
 
@@ -419,6 +425,90 @@ selectOptions selectedWarband warbands =
     List.map (\w -> option [ selected (Just w == selectedWarband) ] [ text w.name ]) warbands
 
 
+viewProfile : Profile -> List (Html Msg)
+viewProfile profile =
+    let
+        header t =
+            th [] [ text t ]
+
+        body x =
+            td [] [ text (String.fromInt x) ]
+    in
+    [ tr []
+        [ header "M"
+        , header "WS"
+        , header "BS"
+        , header "S"
+        , header "T"
+        , header "W"
+        , header "I"
+        , header "A"
+        , header "Ld"
+        ]
+    , tr []
+        [ body profile.movement
+        , body profile.weaponSkill
+        , body profile.ballisticSkill
+        , body profile.strength
+        , body profile.toughness
+        , body profile.wounds
+        , body profile.initiative
+        , body profile.attacks
+        , body profile.leadership
+        ]
+    ]
+
+
+viewAndEditUnit : Unit -> Html Msg
+viewAndEditUnit unit =
+    let
+        nameRow =
+            tr [] [ td [ colspan 9 ] [ text <| "Name: " ++ unit.name ] ]
+
+        countRow =
+            tr [] [ td [ colspan 9 ] [ text <| "Num. models: " ++ String.fromInt unit.count ] ]
+
+        xpRow =
+            tr [] [ td [ colspan 9 ] [ text <| "Experience (XP): " ++ String.fromInt unit.xp ] ]
+
+        profileRows =
+            viewProfile unit.profile
+
+        rows =
+            [ nameRow, countRow, xpRow ] ++ profileRows
+    in
+    table [ class "unit" ]
+        [ tbody [] rows ]
+
+
+viewAndEditWarband : Warband -> List (Html Msg)
+viewAndEditWarband warband =
+    [ h2 [] [ text <| "Name: " ++ warband.name ]
+    , p [] [ text <| "Gold: " ++ String.fromInt warband.treasury.gold ]
+    , p [] [ text <| "Wyrdstone: " ++ String.fromInt warband.treasury.wyrdstone ]
+    ]
+        ++ List.map viewAndEditUnit warband.units
+
+
+viewWarband : Model -> Html Msg
+viewWarband model =
+    div [] <|
+        [ h1 [] [ text "Mordhelp" ]
+        , siteNav
+        , button [ onClick WarbandsRequested ] [ text "Upload Warband(s)" ]
+        , p [] [ text "Select your warband: " ]
+        , select [ onInput WarbandSelected ] (selectOptions model.warband model.warbands)
+        ]
+            ++ (case model.warband of
+                    Just w ->
+                        viewAndEditWarband w
+
+                    Nothing ->
+                        []
+               )
+            ++ [ viewFooter ]
+
+
 repoUrl : String
 repoUrl =
     "https://github.com/michaelsproul/mordhelp"
@@ -429,8 +519,8 @@ viewFooter =
     p [ class "footer" ] [ text "Source available on ", a [ href repoUrl ] [ text "GitHub" ] ]
 
 
-viewWarband : Model -> Html Msg
-viewWarband model =
+viewMatchups : Model -> Html Msg
+viewMatchups model =
     div [] <|
         [ h1 [] [ text "Mordhelp" ]
         , siteNav

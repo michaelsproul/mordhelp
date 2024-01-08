@@ -77,13 +77,21 @@ type Equipment
 
 type alias Unit =
     { count : Int
+    , name : String
+    , xp : Int
     , profile : Profile
     , equipment : List Equipment
     }
 
 
+type alias Treasury =
+    { gold : Int
+    , wyrdstone : Int
+    }
+
+
 type alias Warband =
-    { name : String, units : List Unit }
+    { name : String, treasury : Treasury, units : List Unit }
 
 
 defaultWeapon : Weapon
@@ -184,12 +192,22 @@ decodeUnit : Decoder Unit
 decodeUnit =
     Decode.succeed Unit
         |> required "count" int
+        |> required "name" string
+        |> required "xp" int
         |> required "profile" decodeProfile
         |> required "equipment" (list decodeEquipment)
+
+
+decodeTreasury : Decoder Treasury
+decodeTreasury =
+    Decode.succeed Treasury
+        |> required "gold" int
+        |> required "wyrdstone" int
 
 
 decodeWarband : Decoder Warband
 decodeWarband =
     Decode.succeed Warband
         |> required "name" string
+        |> required "treasury" decodeTreasury
         |> required "units" (list decodeUnit)
