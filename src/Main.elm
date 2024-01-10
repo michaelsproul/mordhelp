@@ -1,5 +1,6 @@
 module Main exposing (..)
 
+import Accessors exposing (get, set)
 import Attack exposing (rendByStrength, toHitBallistic, toHitByWs, toWoundByStrength)
 import Browser exposing (Document)
 import Dict exposing (Dict)
@@ -28,6 +29,7 @@ import Html
 import Html.Attributes exposing (class, colspan, href, selected)
 import Html.Events exposing (onClick, onInput)
 import Json.Decode as Decode exposing (Decoder)
+import Lenses exposing (profileName)
 import List exposing (map, range)
 import Set exposing (Set)
 import Task exposing (Task)
