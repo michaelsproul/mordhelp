@@ -14,6 +14,7 @@ import Html
         , div
         , h1
         , h2
+        , input
         , option
         , p
         , select
@@ -26,10 +27,10 @@ import Html
         , thead
         , tr
         )
-import Html.Attributes exposing (class, colspan, href, selected)
+import Html.Attributes as Attributes exposing (class, colspan, href, selected)
 import Html.Events exposing (onClick, onInput)
 import Json.Decode as Decode exposing (Decoder)
-import Lenses exposing (profileName)
+import Lenses exposing (movement, unitProfile)
 import List exposing (map, range)
 import Set exposing (Set)
 import Task exposing (Task)
@@ -89,6 +90,8 @@ type Msg
     | WarbandSelected String
     | EnemyWarbandSelected String
     | ChangePage Page
+      --| Edit is parameterised by the unit to edit and an editing function
+    | EditWarband Int (Unit -> Unit)
     | Noop
 
 
@@ -176,6 +179,29 @@ update msg model =
 
         ChangePage page ->
             ( { model | page = page }, Cmd.none )
+
+        EditWarband idx f ->
+            let
+                newWarband =
+                    Maybe.map
+                        (\warband ->
+                            let
+                                units =
+                                    List.indexedMap
+                                        (\i unit ->
+                                            if i == idx then
+                                                f unit
+
+                                            else
+                                                unit
+                                        )
+                                        warband.units
+                            in
+                            { warband | units = units }
+                        )
+                        model.warband
+            in
+            ( { model | warband = newWarband }, Cmd.none )
 
         Noop ->
             ( model, Cmd.none )
@@ -427,8 +453,17 @@ selectOptions selectedWarband warbands =
     List.map (\w -> option [ selected (Just w == selectedWarband) ] [ text w.name ]) warbands
 
 
-viewProfile : Profile -> List (Html Msg)
-viewProfile profile =
+intEdit idx accessor string =
+    case String.toInt string of
+        Just value ->
+            EditWarband idx (set accessor value)
+
+        Nothing ->
+            Debug.log "invalid input, not an integer" Noop
+
+
+viewProfile : Int -> Profile -> List (Html Msg)
+viewProfile idx profile =
     let
         header t =
             th [] [ text t ]
@@ -448,7 +483,13 @@ viewProfile profile =
         , header "Ld"
         ]
     , tr []
-        [ body profile.movement
+        [ td []
+            [ input
+                [ Attributes.value (String.fromInt profile.movement)
+                , onInput (intEdit idx (unitProfile << movement))
+                ]
+                []
+            ]
         , body profile.weaponSkill
         , body profile.ballisticSkill
         , body profile.strength
@@ -461,8 +502,8 @@ viewProfile profile =
     ]
 
 
-viewAndEditUnit : Unit -> Html Msg
-viewAndEditUnit unit =
+viewAndEditUnit : Int -> Unit -> Html Msg
+viewAndEditUnit idx unit =
     let
         nameRow =
             tr [] [ td [ colspan 9 ] [ text <| "Name: " ++ unit.name ] ]
@@ -474,7 +515,7 @@ viewAndEditUnit unit =
             tr [] [ td [ colspan 9 ] [ text <| "Experience (XP): " ++ String.fromInt unit.xp ] ]
 
         profileRows =
-            viewProfile unit.profile
+            viewProfile idx unit.profile
 
         rows =
             [ nameRow, countRow, xpRow ] ++ profileRows
@@ -489,7 +530,7 @@ viewAndEditWarband warband =
     , p [] [ text <| "Gold: " ++ String.fromInt warband.treasury.gold ]
     , p [] [ text <| "Wyrdstone: " ++ String.fromInt warband.treasury.wyrdstone ]
     ]
-        ++ List.map viewAndEditUnit warband.units
+        ++ List.indexedMap viewAndEditUnit warband.units
 
 
 viewWarband : Model -> Html Msg

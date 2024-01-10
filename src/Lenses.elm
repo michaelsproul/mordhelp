@@ -1,4 +1,4 @@
-module Lenses exposing (profileName)
+module Lenses exposing (movement, unitProfile)
 
 import Accessors exposing (makeOneToOne)
 import Warband exposing (Profile, Unit, Warband)
@@ -70,7 +70,7 @@ leadership =
         (\change record -> { record | leadership = change record.leadership })
 
 
-profile =
+unitProfile =
     makeOneToOne
         .profile
         (\change record -> { record | profile = change record.profile })
