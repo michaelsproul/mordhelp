@@ -9,6 +9,7 @@ module Warband exposing
     , WeaponStrength
     , decodeWarband
     , defaultWeapon
+    , encodeWarband
     )
 
 import Json.Decode as Decode exposing (Decoder, int, list, maybe, string)

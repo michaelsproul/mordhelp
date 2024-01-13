@@ -5,6 +5,7 @@ import Attack exposing (rendByStrength, toHitBallistic, toHitByWs, toWoundByStre
 import Browser exposing (Document)
 import Dict exposing (Dict)
 import File exposing (File)
+import File.Download
 import File.Select as Select
 import Html
     exposing
@@ -31,6 +32,7 @@ import Html
 import Html.Attributes as Attributes exposing (class, colspan, href, selected)
 import Html.Events exposing (onClick, onInput)
 import Json.Decode as Decode exposing (Decoder)
+import Json.Encode
 import Lenses exposing (..)
 import List exposing (map, range)
 import Set exposing (Set)
@@ -46,6 +48,7 @@ import Warband
         , WeaponStrength
         , decodeWarband
         , defaultWeapon
+        , encodeWarband
         )
 
 
@@ -90,6 +93,7 @@ type Msg
     | WarbandLoaded Warband
     | WarbandSelected String
     | EnemyWarbandSelected String
+    | DownloadWarband
     | ChangePage Page
       --| EditUnit is parameterised by the unit index to edit and an editing function
     | EditUnit Int (Unit -> Unit)
@@ -178,6 +182,21 @@ update msg model =
                     List.head (List.filter (\w -> w.name == name) model.warbands)
             in
             ( { model | enemyWarband = warband }, Cmd.none )
+
+        DownloadWarband ->
+            case model.warband of
+                Just w ->
+                    let
+                        indent =
+                            2
+
+                        jsonString =
+                            Json.Encode.encode indent (encodeWarband w)
+                    in
+                    ( model, File.Download.string "warband.json" "application/json" jsonString )
+
+                Nothing ->
+                    ( model, Cmd.none )
 
         ChangePage page ->
             ( { model | page = page }, Cmd.none )
@@ -606,7 +625,8 @@ viewWarband model =
         ]
             ++ (case model.warband of
                     Just w ->
-                        viewAndEditWarband w
+                        [ button [ onClick DownloadWarband ] [ text "Download Warband" ] ]
+                            ++ viewAndEditWarband w
 
                     Nothing ->
                         []

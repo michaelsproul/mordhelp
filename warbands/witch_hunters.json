@@ -1,18 +1,19 @@
 {
-  "name": "Witch Hunters",
+  "name": "Example Witch Hunters",
   "treasury": {
-    "gold": 7,
-    "wyrdstone": 0
+    "gold": 100,
+    "wyrdstone": 3,
+    "equipment": []
   },
   "units": [
     {
-      "name": "Haskell Hexbane",
       "count": 1,
+      "name": "Haskell Hexbane",
       "xp": 0,
       "profile": {
         "name": "Witch Hunter Captain",
         "kind": "hero",
-        "movement": 4,
+        "movement": 6,
         "weaponSkill": 4,
         "ballisticSkill": 4,
         "strength": 3,
@@ -26,7 +27,7 @@
         {
           "name": "Sword",
           "kind": "melee",
-          "strength": "mod+0"
+          "strength": "mod0"
         },
         {
           "name": "Pistol (melee)",
@@ -43,8 +44,8 @@
       ]
     },
     {
-      "name": "Pascal Pious",
       "count": 1,
+      "name": "Pascal Pious",
       "xp": 0,
       "profile": {
         "name": "Warrior Priest",
@@ -63,13 +64,13 @@
         {
           "name": "Hammer",
           "kind": "melee",
-          "strength": "mod+0"
+          "strength": "mod0"
         }
       ]
     },
     {
-      "name": "Monty Python",
       "count": 1,
+      "name": "Monty Python",
       "xp": 0,
       "profile": {
         "name": "Witch Hunter",
@@ -88,13 +89,13 @@
         {
           "name": "Double-handed axe",
           "kind": "melee",
-          "strength": "mod+2"
+          "strength": "mod2"
         }
       ]
     },
     {
-      "name": "Ruby Rampage",
       "count": 1,
+      "name": "Ruby Rampage",
       "xp": 0,
       "profile": {
         "name": "Witch Hunter",
@@ -113,14 +114,14 @@
         {
           "name": "Axe",
           "kind": "melee",
-          "strength": "mod+0",
+          "strength": "mod0",
           "rend": "mod-1"
         }
       ]
     },
     {
-      "name": "Idris Elbow",
       "count": 1,
+      "name": "Idris Elbow",
       "xp": 0,
       "profile": {
         "name": "Witch Hunter",
@@ -139,7 +140,7 @@
         {
           "name": "Dagger",
           "kind": "melee",
-          "strength": "mod+0"
+          "strength": "mod0"
         },
         {
           "name": "Crossbow",
@@ -150,8 +151,8 @@
       ]
     },
     {
-      "name": "Flail Flaggies",
       "count": 2,
+      "name": "Flail Flaggies",
       "xp": 0,
       "profile": {
         "name": "Flagellant",
@@ -170,13 +171,13 @@
         {
           "name": "Flail",
           "kind": "melee",
-          "strength": "mod+2"
+          "strength": "mod2"
         }
       ]
     },
     {
-      "name": "Axe Flaggies",
       "count": 1,
+      "name": "Axe Flaggies",
       "xp": 0,
       "profile": {
         "name": "Flagellant",
@@ -195,13 +196,13 @@
         {
           "name": "Double-handed axe",
           "kind": "melee",
-          "strength": "mod+2"
+          "strength": "mod2"
         }
       ]
     },
     {
-      "name": "Dawgs",
       "count": 2,
+      "name": "Dawgs",
       "xp": 0,
       "profile": {
         "name": "Warhound",
