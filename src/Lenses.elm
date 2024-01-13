@@ -1,4 +1,23 @@
-module Lenses exposing (movement, unitProfile)
+module Lenses exposing
+    ( profileAttacks
+    , profileBallisticSkill
+    , profileInitiative
+    , profileKind
+    , profileLeadership
+    , profileMovement
+    , profileStrength
+    , profileToughness
+    , profileWeaponSkill
+    , profileWounds
+    , treasuryGold
+    , treasuryWyrdstone
+    , unitCount
+    , unitName
+    , unitProfile
+    , unitXp
+    , warbandName
+    , warbandTreasury
+    )
 
 import Accessors exposing (makeOneToOne)
 import Warband exposing (Profile, Unit, Warband)
@@ -10,61 +29,61 @@ profileName =
         (\change record -> { record | name = change record.name })
 
 
-kind =
+profileKind =
     makeOneToOne
         .kind
         (\change record -> { record | kind = change record.kind })
 
 
-movement =
+profileMovement =
     makeOneToOne
         .movement
         (\change record -> { record | movement = change record.movement })
 
 
-weaponSkill =
+profileWeaponSkill =
     makeOneToOne
         .weaponSkill
         (\change record -> { record | weaponSkill = change record.weaponSkill })
 
 
-ballisticSkill =
+profileBallisticSkill =
     makeOneToOne
         .ballisticSkill
         (\change record -> { record | ballisticSkill = change record.ballisticSkill })
 
 
-strength =
+profileStrength =
     makeOneToOne
         .strength
         (\change record -> { record | strength = change record.strength })
 
 
-toughness =
+profileToughness =
     makeOneToOne
         .toughness
         (\change record -> { record | toughness = change record.toughness })
 
 
-wounds =
+profileWounds =
     makeOneToOne
         .wounds
         (\change record -> { record | wounds = change record.wounds })
 
 
-initiative =
+profileInitiative =
     makeOneToOne
         .initiative
         (\change record -> { record | initiative = change record.initiative })
 
 
-attacks =
+profileAttacks =
     makeOneToOne
         .attacks
         (\change record -> { record | attacks = change record.attacks })
 
 
-leadership =
+profileLeadership =
     makeOneToOne
         .leadership
         (\change record -> { record | leadership = change record.leadership })
@@ -74,3 +93,51 @@ unitProfile =
     makeOneToOne
         .profile
         (\change record -> { record | profile = change record.profile })
+
+
+unitName =
+    makeOneToOne
+        .name
+        (\change record -> { record | name = change record.name })
+
+
+unitCount =
+    makeOneToOne
+        .count
+        (\change record -> { record | count = change record.count })
+
+
+unitXp =
+    makeOneToOne
+        .xp
+        (\change record -> { record | xp = change record.xp })
+
+
+unitEquipment =
+    makeOneToOne
+        .equipment
+        (\change record -> { record | equipment = change record.equipment })
+
+
+warbandName =
+    makeOneToOne
+        .name
+        (\change record -> { record | name = change record.name })
+
+
+warbandTreasury =
+    makeOneToOne
+        .treasury
+        (\change record -> { record | treasury = change record.treasury })
+
+
+treasuryGold =
+    makeOneToOne
+        .gold
+        (\change record -> { record | gold = change record.gold })
+
+
+treasuryWyrdstone =
+    makeOneToOne
+        .wyrdstone
+        (\change record -> { record | wyrdstone = change record.wyrdstone })

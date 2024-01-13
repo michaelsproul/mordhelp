@@ -14,6 +14,7 @@ import Html
         , div
         , h1
         , h2
+        , h3
         , input
         , option
         , p
@@ -30,7 +31,7 @@ import Html
 import Html.Attributes as Attributes exposing (class, colspan, href, selected)
 import Html.Events exposing (onClick, onInput)
 import Json.Decode as Decode exposing (Decoder)
-import Lenses exposing (movement, unitProfile)
+import Lenses exposing (..)
 import List exposing (map, range)
 import Set exposing (Set)
 import Task exposing (Task)
@@ -90,8 +91,9 @@ type Msg
     | WarbandSelected String
     | EnemyWarbandSelected String
     | ChangePage Page
-      --| Edit is parameterised by the unit to edit and an editing function
-    | EditWarband Int (Unit -> Unit)
+      --| EditUnit is parameterised by the unit index to edit and an editing function
+    | EditUnit Int (Unit -> Unit)
+    | EditWarband (Warband -> Warband)
     | Noop
 
 
@@ -180,7 +182,7 @@ update msg model =
         ChangePage page ->
             ( { model | page = page }, Cmd.none )
 
-        EditWarband idx f ->
+        EditUnit idx f ->
             let
                 newWarband =
                     Maybe.map
@@ -200,6 +202,13 @@ update msg model =
                             { warband | units = units }
                         )
                         model.warband
+            in
+            ( { model | warband = newWarband }, Cmd.none )
+
+        EditWarband f ->
+            let
+                newWarband =
+                    Maybe.map f model.warband
             in
             ( { model | warband = newWarband }, Cmd.none )
 
@@ -456,10 +465,59 @@ selectOptions selectedWarband warbands =
 intEdit idx accessor string =
     case String.toInt string of
         Just value ->
-            EditWarband idx (set accessor value)
+            EditUnit idx (\unit -> set accessor value unit)
 
         Nothing ->
             Debug.log "invalid input, not an integer" Noop
+
+
+intInput initialValue idx accessor =
+    input
+        [ Attributes.value (String.fromInt initialValue)
+        , onInput (\string -> intEdit idx accessor string)
+        ]
+        []
+
+
+stringEdit idx accessor value =
+    EditUnit idx (\unit -> set accessor value unit)
+
+
+stringInput initialValue idx accessor =
+    input
+        [ Attributes.value initialValue
+        , onInput (\string -> stringEdit idx accessor string)
+        ]
+        []
+
+
+warbandIntEdit accessor string =
+    case String.toInt string of
+        Just value ->
+            EditWarband (set accessor value)
+
+        Nothing ->
+            Debug.log "invalid input, not an integer" Noop
+
+
+warbandIntInput initialValue accessor =
+    input
+        [ Attributes.value (String.fromInt initialValue)
+        , onInput (warbandIntEdit accessor)
+        ]
+        []
+
+
+warbandStringEdit accessor value =
+    EditWarband (set accessor value)
+
+
+warbandStringInput initialValue accessor =
+    input
+        [ Attributes.value initialValue
+        , onInput (warbandStringEdit accessor)
+        ]
+        []
 
 
 viewProfile : Int -> Profile -> List (Html Msg)
@@ -468,8 +526,8 @@ viewProfile idx profile =
         header t =
             th [] [ text t ]
 
-        body x =
-            td [] [ text (String.fromInt x) ]
+        cell initialValue accessor =
+            td [] [ intInput initialValue idx (unitProfile << accessor) ]
     in
     [ tr []
         [ header "M"
@@ -483,36 +541,39 @@ viewProfile idx profile =
         , header "Ld"
         ]
     , tr []
-        [ td []
-            [ input
-                [ Attributes.value (String.fromInt profile.movement)
-                , onInput (intEdit idx (unitProfile << movement))
-                ]
-                []
-            ]
-        , body profile.weaponSkill
-        , body profile.ballisticSkill
-        , body profile.strength
-        , body profile.toughness
-        , body profile.wounds
-        , body profile.initiative
-        , body profile.attacks
-        , body profile.leadership
+        [ cell profile.movement profileMovement
+        , cell profile.weaponSkill profileWeaponSkill
+        , cell profile.ballisticSkill profileBallisticSkill
+        , cell profile.strength profileStrength
+        , cell profile.toughness profileToughness
+        , cell profile.wounds profileWounds
+        , cell profile.initiative profileInitiative
+        , cell profile.attacks profileAttacks
+        , cell profile.leadership profileLeadership
         ]
     ]
+
+
+headerCell : String -> Html Msg -> Html Msg
+headerCell label content =
+    div [] [ text (label ++ ": "), content ]
 
 
 viewAndEditUnit : Int -> Unit -> Html Msg
 viewAndEditUnit idx unit =
     let
+        width =
+            9
+
         nameRow =
-            tr [] [ td [ colspan 9 ] [ text <| "Name: " ++ unit.name ] ]
+            tr [] [ td [ colspan width ] [ headerCell "Name" (stringInput unit.name idx unitName) ] ]
 
         countRow =
-            tr [] [ td [ colspan 9 ] [ text <| "Num. models: " ++ String.fromInt unit.count ] ]
+            tr []
+                [ td [ colspan width ] [ headerCell "Models" (intInput unit.count idx unitCount) ] ]
 
         xpRow =
-            tr [] [ td [ colspan 9 ] [ text <| "Experience (XP): " ++ String.fromInt unit.xp ] ]
+            tr [] [ td [ colspan width ] [ headerCell "Experience (XP)" (intInput unit.xp idx unitXp) ] ]
 
         profileRows =
             viewProfile idx unit.profile
@@ -526,9 +587,10 @@ viewAndEditUnit idx unit =
 
 viewAndEditWarband : Warband -> List (Html Msg)
 viewAndEditWarband warband =
-    [ h2 [] [ text <| "Name: " ++ warband.name ]
-    , p [] [ text <| "Gold: " ++ String.fromInt warband.treasury.gold ]
-    , p [] [ text <| "Wyrdstone: " ++ String.fromInt warband.treasury.wyrdstone ]
+    [ h2 [] [ headerCell "Name" (warbandStringInput warband.name warbandName) ]
+    , p [] [ headerCell "Gold" (warbandIntInput warband.treasury.gold (warbandTreasury << treasuryGold)) ]
+    , p [] [ headerCell "Wyrdstone" (warbandIntInput warband.treasury.wyrdstone (warbandTreasury << treasuryWyrdstone)) ]
+    , h3 [] [ text "Units" ]
     ]
         ++ List.indexedMap viewAndEditUnit warband.units
 
