@@ -13,6 +13,7 @@ module Warband exposing
 
 import Json.Decode as Decode exposing (Decoder, int, list, maybe, string)
 import Json.Decode.Pipeline exposing (hardcoded, optional, required)
+import Json.Encode as E
 
 
 minCharacteristic : Int
@@ -37,6 +38,7 @@ type alias Profile =
     , initiative : Int
     , attacks : Int
     , leadership : Int
+    , specialRules : Maybe (List String)
     }
 
 
@@ -68,6 +70,7 @@ type alias Weapon =
     , kind : WeaponKind
     , strength : WeaponStrength
     , rend : Maybe WeaponRend
+    , specialRules : Maybe (List String)
     }
 
 
@@ -87,6 +90,7 @@ type alias Unit =
 type alias Treasury =
     { gold : Int
     , wyrdstone : Int
+    , equipment : List Equipment
     }
 
 
@@ -96,7 +100,22 @@ type alias Warband =
 
 defaultWeapon : Weapon
 defaultWeapon =
-    { name = "Unarmed strike", kind = Melee, strength = ModifierMod 0, rend = Nothing }
+    { name = "Unarmed strike"
+    , kind = Melee
+    , strength = ModifierMod 0
+    , rend = Nothing
+    , specialRules = Nothing
+    }
+
+
+encodeMaybeField : String -> Maybe a -> (a -> E.Value) -> List ( String, E.Value )
+encodeMaybeField name m enc =
+    case m of
+        Just v ->
+            [ ( name, enc v ) ]
+
+        Nothing ->
+            []
 
 
 decodeLiteral : String -> String -> Decoder String
@@ -121,12 +140,32 @@ decodeUnitKind =
         ]
 
 
+encodeUnitKind : UnitKind -> E.Value
+encodeUnitKind kind =
+    case kind of
+        Hero ->
+            E.string "hero"
+
+        Henchman ->
+            E.string "henchman"
+
+
 decodeWeaponKind : Decoder WeaponKind
 decodeWeaponKind =
     Decode.oneOf
         [ string |> Decode.andThen (decodeLiteralAsValue "melee" Melee)
         , string |> Decode.andThen (decodeLiteralAsValue "ballistic" Ballistic)
         ]
+
+
+encodeWeaponKind : WeaponKind -> E.Value
+encodeWeaponKind kind =
+    case kind of
+        Melee ->
+            E.string "melee"
+
+        Ballistic ->
+            E.string "ballistic"
 
 
 decodeProfile : Decoder Profile
@@ -143,6 +182,25 @@ decodeProfile =
         |> required "initiative" int
         |> required "attacks" int
         |> required "leadership" int
+        |> optional "specialRules" (maybe (list string)) Nothing
+
+
+encodeProfile : Profile -> E.Value
+encodeProfile profile =
+    E.object <|
+        [ ( "name", E.string profile.name )
+        , ( "kind", encodeUnitKind profile.kind )
+        , ( "movement", E.int profile.movement )
+        , ( "weaponSkill", E.int profile.weaponSkill )
+        , ( "ballisticSkill", E.int profile.ballisticSkill )
+        , ( "strength", E.int profile.strength )
+        , ( "toughness", E.int profile.toughness )
+        , ( "wounds", E.int profile.wounds )
+        , ( "initiative", E.int profile.initiative )
+        , ( "attacks", E.int profile.attacks )
+        , ( "leadership", E.int profile.leadership )
+        ]
+            ++ encodeMaybeField "specialRules" profile.specialRules (E.list E.string)
 
 
 decodeModifier : Decoder Modifier
@@ -171,21 +229,51 @@ decodeModifier =
             )
 
 
+encodeModifier : Modifier -> E.Value
+encodeModifier modifier =
+    case modifier of
+        ModifierAbs n ->
+            E.string <| "abs" ++ String.fromInt n
+
+        ModifierMod n ->
+            E.string <| "mod" ++ String.fromInt n
+
+
 decodeEquipment : Decoder Equipment
 decodeEquipment =
     Decode.succeed
-        (\name kind strength rend ->
+        (\name kind strength rend specialRules ->
             EquipmentWeapon
                 { name = name
                 , kind = kind
                 , strength = strength
                 , rend = rend
+                , specialRules = specialRules
                 }
         )
         |> required "name" string
         |> required "kind" decodeWeaponKind
         |> required "strength" decodeModifier
         |> optional "rend" (maybe decodeModifier) Nothing
+        |> optional "specialRules" (maybe (list string)) Nothing
+
+
+encodeEquipment : Equipment -> E.Value
+encodeEquipment equipment =
+    case equipment of
+        EquipmentWeapon w ->
+            encodeWeapon w
+
+
+encodeWeapon : Weapon -> E.Value
+encodeWeapon weapon =
+    E.object <|
+        [ ( "name", E.string weapon.name )
+        , ( "kind", encodeWeaponKind weapon.kind )
+        , ( "strength", encodeModifier weapon.strength )
+        ]
+            ++ encodeMaybeField "rend" weapon.rend encodeModifier
+            ++ encodeMaybeField "specialRules" weapon.specialRules (E.list E.string)
 
 
 decodeUnit : Decoder Unit
@@ -198,11 +286,32 @@ decodeUnit =
         |> required "equipment" (list decodeEquipment)
 
 
+encodeUnit : Unit -> E.Value
+encodeUnit unit =
+    E.object <|
+        [ ( "count", E.int unit.count )
+        , ( "name", E.string unit.name )
+        , ( "xp", E.int unit.xp )
+        , ( "profile", encodeProfile unit.profile )
+        , ( "equipment", E.list encodeEquipment unit.equipment )
+        ]
+
+
 decodeTreasury : Decoder Treasury
 decodeTreasury =
     Decode.succeed Treasury
         |> required "gold" int
         |> required "wyrdstone" int
+        |> optional "equipment" (list decodeEquipment) []
+
+
+encodeTreasury : Treasury -> E.Value
+encodeTreasury t =
+    E.object <|
+        [ ( "gold", E.int t.gold )
+        , ( "wyrdstone", E.int t.wyrdstone )
+        , ( "equipment", E.list encodeEquipment t.equipment )
+        ]
 
 
 decodeWarband : Decoder Warband
@@ -211,3 +320,12 @@ decodeWarband =
         |> required "name" string
         |> required "treasury" decodeTreasury
         |> required "units" (list decodeUnit)
+
+
+encodeWarband : Warband -> E.Value
+encodeWarband warband =
+    E.object <|
+        [ ( "name", E.string warband.name )
+        , ( "treasury", encodeTreasury warband.treasury )
+        , ( "units", E.list encodeUnit warband.units )
+        ]
