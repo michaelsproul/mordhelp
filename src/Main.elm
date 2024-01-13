@@ -16,6 +16,8 @@ import Html
         , h1
         , h2
         , h3
+        , h4
+        , h5
         , input
         , option
         , p
@@ -25,11 +27,12 @@ import Html
         , tbody
         , td
         , text
+        , textarea
         , th
         , thead
         , tr
         )
-import Html.Attributes as Attributes exposing (class, colspan, href, selected)
+import Html.Attributes as Attributes exposing (class, colspan, href, readonly, selected)
 import Html.Events exposing (onClick, onInput)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode
@@ -43,9 +46,11 @@ import Warband
         , Modifier(..)
         , Profile
         , Unit
+        , UnitKind(..)
         , Warband
         , WeaponKind(..)
         , WeaponStrength
+        , decodeUnitKindStr
         , decodeWarband
         , defaultWeapon
         , encodeWarband
@@ -95,8 +100,10 @@ type Msg
     | EnemyWarbandSelected String
     | DownloadWarband
     | ChangePage Page
-      --| EditUnit is parameterised by the unit index to edit and an editing function
+      --| EditUnit is parameterised by the unit index to edit and an editing function.
     | EditUnit Int (Unit -> Unit)
+      --| EditEquipment is parameterised by unit index and equipment index.
+    | EditEquipment ( Int, Int ) (Equipment -> Equipment)
     | EditWarband (Warband -> Warband)
     | Noop
 
@@ -212,6 +219,41 @@ update msg model =
                                         (\i unit ->
                                             if i == idx then
                                                 f unit
+
+                                            else
+                                                unit
+                                        )
+                                        warband.units
+                            in
+                            { warband | units = units }
+                        )
+                        model.warband
+            in
+            ( { model | warband = newWarband }, Cmd.none )
+
+        EditEquipment ( unitIdx, equipmentIdx ) f ->
+            let
+                newWarband =
+                    Maybe.map
+                        (\warband ->
+                            let
+                                units =
+                                    List.indexedMap
+                                        (\i unit ->
+                                            if i == unitIdx then
+                                                let
+                                                    newEquipment =
+                                                        List.indexedMap
+                                                            (\j equipment ->
+                                                                if j == equipmentIdx then
+                                                                    f equipment
+
+                                                                else
+                                                                    equipment
+                                                            )
+                                                            unit.equipment
+                                                in
+                                                { unit | equipment = newEquipment }
 
                                             else
                                                 unit
@@ -476,71 +518,120 @@ viewAllUnitMatchups model =
             p [] [ text "Upload warbands then select a warband & enemy warband above" ]
 
 
-selectOptions : Maybe Warband -> List Warband -> List (Html Msg)
-selectOptions selectedWarband warbands =
+warbandSelectOptions : Maybe Warband -> List Warband -> List (Html Msg)
+warbandSelectOptions selectedWarband warbands =
     List.map (\w -> option [ selected (Just w == selectedWarband) ] [ text w.name ]) warbands
 
 
-intEdit idx accessor string =
+unitKindSelectOptions : UnitKind -> List (Html Msg)
+unitKindSelectOptions kind =
+    [ option [ selected (kind == Hero) ] [ text "hero" ]
+    , option [ selected (kind == Henchman) ] [ text "henchman" ]
+    ]
+
+
+superGenericEdit parser event accessor string =
+    case parser string of
+        Just value ->
+            event (set accessor value)
+
+        Nothing ->
+            Debug.log ("invalid input: " ++ string) Noop
+
+
+genericIntEdit event accessor string =
     case String.toInt string of
         Just value ->
-            EditUnit idx (\unit -> set accessor value unit)
+            event (set accessor value)
 
         Nothing ->
             Debug.log "invalid input, not an integer" Noop
 
 
-intInput initialValue idx accessor =
+genericIntInput event ro initialValue accessor =
     input
         [ Attributes.value (String.fromInt initialValue)
-        , onInput (\string -> intEdit idx accessor string)
+        , readonly ro
+        , onInput (genericIntEdit event accessor)
         ]
         []
+
+
+genericStringEdit event accessor value =
+    event (set accessor value)
+
+
+genericStringInput event initialValue accessor =
+    input
+        [ Attributes.value initialValue
+        , onInput (genericStringEdit event accessor)
+        ]
+        []
+
+
+
+-- Editors and inputs
+
+
+intEdit idx =
+    genericIntEdit (EditUnit idx)
+
+
+intInputRo ro initialValue idx accessor =
+    genericIntInput (EditUnit idx) ro initialValue accessor
+
+
+intInput =
+    intInputRo False
 
 
 stringEdit idx accessor value =
-    EditUnit idx (\unit -> set accessor value unit)
+    genericStringEdit (EditUnit idx)
 
 
 stringInput initialValue idx accessor =
-    input
-        [ Attributes.value initialValue
-        , onInput (\string -> stringEdit idx accessor string)
-        ]
-        []
+    genericStringInput (EditUnit idx) initialValue accessor
 
 
-warbandIntEdit accessor string =
-    case String.toInt string of
-        Just value ->
-            EditWarband (set accessor value)
+unitKindSelect idx initialValue accessor =
+    select [ onInput <| superGenericEdit decodeUnitKindStr (EditUnit idx) accessor ]
+        (unitKindSelectOptions initialValue)
 
-        Nothing ->
-            Debug.log "invalid input, not an integer" Noop
+
+warbandIntEdit =
+    genericIntEdit EditWarband
 
 
 warbandIntInput initialValue accessor =
-    input
-        [ Attributes.value (String.fromInt initialValue)
-        , onInput (warbandIntEdit accessor)
-        ]
-        []
+    genericIntInput EditWarband False initialValue accessor
 
 
-warbandStringEdit accessor value =
-    EditWarband (set accessor value)
+warbandStringEdit =
+    genericStringEdit EditWarband
 
 
 warbandStringInput initialValue accessor =
-    input
-        [ Attributes.value initialValue
-        , onInput (warbandStringEdit accessor)
-        ]
-        []
+    genericStringInput EditWarband initialValue accessor
 
 
-viewProfile : Int -> Profile -> List (Html Msg)
-viewProfile idx profile =
+equipmentIntEdit idx =
+    genericIntEdit (EditEquipment idx)
+
+
+equipmentIntInput idx =
+    genericIntInput (EditEquipment idx) False
+
+
+equipmentStringEdit idx =
+    genericStringEdit (EditEquipment idx)
+
+
+equipmentStringInput idx =
+    genericStringInput (EditEquipment idx)
+
+
+viewProfileStatBlock : Int -> Profile -> List (Html Msg)
+viewProfileStatBlock idx profile =
     let
         header t =
             th [] [ text t ]
@@ -573,6 +664,20 @@ viewProfile idx profile =
     ]
 
 
+viewAndEditEquipment : ( Int, Int ) -> Equipment -> List (Html Msg)
+viewAndEditEquipment idx (EquipmentWeapon weapon) =
+    [ tr []
+        [ equipmentStringInput idx weapon.name (equipmentWeapon << weaponName)
+        ]
+    ]
+
+
+viewUnitEquipment : Int -> List Equipment -> List (Html Msg)
+viewUnitEquipment unitIdx equipment =
+    List.indexedMap (\equipIdx -> viewAndEditEquipment ( unitIdx, equipIdx )) equipment
+        |> List.concat
+
+
 headerCell : String -> Html Msg -> Html Msg
 headerCell label content =
     div [] [ text (label ++ ": "), content ]
@@ -584,24 +689,50 @@ viewAndEditUnit idx unit =
         width =
             9
 
+        headerRow =
+            tr [] [ th [ colspan width ] [ h4 [] [ text unit.name ] ] ]
+
         nameRow =
             tr [] [ td [ colspan width ] [ headerCell "Name" (stringInput unit.name idx unitName) ] ]
 
+        kindRow =
+            tr []
+                [ td [ colspan width ]
+                    [ headerCell "Kind" (unitKindSelect idx unit.profile.kind (unitProfile << profileKind)) ]
+                ]
+
         countRow =
             tr []
-                [ td [ colspan width ] [ headerCell "Models" (intInput unit.count idx unitCount) ] ]
+                [ td [ colspan width ]
+                    [ headerCell "Models"
+                        (intInputRo (unit.profile.kind == Hero) unit.count idx unitCount)
+                    ]
+                ]
 
         xpRow =
             tr [] [ td [ colspan width ] [ headerCell "Experience (XP)" (intInput unit.xp idx unitXp) ] ]
 
         profileRows =
-            viewProfile idx unit.profile
+            viewProfileStatBlock idx unit.profile
+
+        equipmentRows =
+            [ tr [] [ td [ colspan width ] [ h5 [] [ text <| unit.name ++ "'s Equipment" ] ] ] ]
+                ++ viewUnitEquipment idx unit.equipment
 
         rows =
-            [ nameRow, countRow, xpRow ] ++ profileRows
+            [ headerRow, nameRow, kindRow, countRow, xpRow ] ++ profileRows ++ equipmentRows
     in
     table [ class "unit" ]
         [ tbody [] rows ]
+
+
+viewAndEditWarbandNotes : String -> List (Html Msg)
+viewAndEditWarbandNotes notes =
+    [ h2 [] [ text "Warband Notes" ]
+    , textarea
+        [ onInput (warbandStringEdit warbandNotes) ]
+        [ text notes ]
+    ]
 
 
 viewAndEditWarband : Warband -> List (Html Msg)
@@ -612,6 +743,7 @@ viewAndEditWarband warband =
     , h3 [] [ text "Units" ]
     ]
         ++ List.indexedMap viewAndEditUnit warband.units
+        ++ viewAndEditWarbandNotes warband.notes
 
 
 viewWarband : Model -> Html Msg
@@ -621,7 +753,7 @@ viewWarband model =
         , siteNav
         , button [ onClick WarbandsRequested ] [ text "Upload Warband(s)" ]
         , p [] [ text "Select your warband: " ]
-        , select [ onInput WarbandSelected ] (selectOptions model.warband model.warbands)
+        , select [ onInput WarbandSelected ] (warbandSelectOptions model.warband model.warbands)
         ]
             ++ (case model.warband of
                     Just w ->
@@ -651,9 +783,9 @@ viewMatchups model =
         , siteNav
         , button [ onClick WarbandsRequested ] [ text "Upload Warband(s)" ]
         , p [] [ text "Select your warband: " ]
-        , select [ onInput WarbandSelected ] (selectOptions model.warband model.warbands)
+        , select [ onInput WarbandSelected ] (warbandSelectOptions model.warband model.warbands)
         , p [] [ text "Select enemy warband: " ]
-        , select [ onInput EnemyWarbandSelected ] (selectOptions model.enemyWarband model.warbands)
+        , select [ onInput EnemyWarbandSelected ] (warbandSelectOptions model.enemyWarband model.warbands)
         ]
             ++ [ viewAllUnitMatchups model ]
             ++ [ viewFooter ]

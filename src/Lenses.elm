@@ -1,26 +1,7 @@
-module Lenses exposing
-    ( profileAttacks
-    , profileBallisticSkill
-    , profileInitiative
-    , profileKind
-    , profileLeadership
-    , profileMovement
-    , profileStrength
-    , profileToughness
-    , profileWeaponSkill
-    , profileWounds
-    , treasuryGold
-    , treasuryWyrdstone
-    , unitCount
-    , unitName
-    , unitProfile
-    , unitXp
-    , warbandName
-    , warbandTreasury
-    )
+module Lenses exposing (..)
 
 import Accessors exposing (makeOneToOne)
-import Warband exposing (Profile, Unit, Warband)
+import Warband exposing (Equipment(..), Profile, Unit, Warband)
 
 
 profileName =
@@ -131,6 +112,12 @@ warbandTreasury =
         (\change record -> { record | treasury = change record.treasury })
 
 
+warbandNotes =
+    makeOneToOne
+        .notes
+        (\change record -> { record | notes = change record.notes })
+
+
 treasuryGold =
     makeOneToOne
         .gold
@@ -141,3 +128,15 @@ treasuryWyrdstone =
     makeOneToOne
         .wyrdstone
         (\change record -> { record | wyrdstone = change record.wyrdstone })
+
+
+equipmentWeapon =
+    makeOneToOne
+        (\(EquipmentWeapon w) -> w)
+        (\change (EquipmentWeapon w) -> EquipmentWeapon (change w))
+
+
+weaponName =
+    makeOneToOne
+        .name
+        (\change record -> { record | name = change record.name })

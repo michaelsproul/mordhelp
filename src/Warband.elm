@@ -3,10 +3,11 @@ module Warband exposing
     , Modifier(..)
     , Profile
     , Unit
-    , UnitKind
+    , UnitKind(..)
     , Warband
     , WeaponKind(..)
     , WeaponStrength
+    , decodeUnitKindStr
     , decodeWarband
     , defaultWeapon
     , encodeWarband
@@ -85,6 +86,9 @@ type alias Unit =
     , xp : Int
     , profile : Profile
     , equipment : List Equipment
+
+    -- TODO
+    -- , specialRules : Maybe (List String)
     }
 
 
@@ -96,7 +100,7 @@ type alias Treasury =
 
 
 type alias Warband =
-    { name : String, treasury : Treasury, units : List Unit }
+    { name : String, treasury : Treasury, units : List Unit, notes : String }
 
 
 defaultWeapon : Weapon
@@ -139,6 +143,16 @@ decodeUnitKind =
         [ string |> Decode.andThen (decodeLiteralAsValue "hero" Hero)
         , string |> Decode.andThen (decodeLiteralAsValue "henchman" Henchman)
         ]
+
+
+decodeUnitKindStr : String -> Maybe UnitKind
+decodeUnitKindStr s =
+    case Decode.decodeString decodeUnitKind ("\"" ++ s ++ "\"") of
+        Ok kind ->
+            Just kind
+
+        Err _ ->
+            Nothing
 
 
 encodeUnitKind : UnitKind -> E.Value
@@ -321,6 +335,7 @@ decodeWarband =
         |> required "name" string
         |> required "treasury" decodeTreasury
         |> required "units" (list decodeUnit)
+        |> optional "notes" string ""
 
 
 encodeWarband : Warband -> E.Value
@@ -329,4 +344,5 @@ encodeWarband warband =
         [ ( "name", E.string warband.name )
         , ( "treasury", encodeTreasury warband.treasury )
         , ( "units", E.list encodeUnit warband.units )
+        , ( "notes", E.string warband.notes )
         ]
