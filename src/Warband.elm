@@ -12,6 +12,8 @@ module Warband exposing
     , decodeUnitKindStr
     , decodeWarband
     , decodeWeaponKindStr
+    , defaultProfile
+    , defaultUnit
     , defaultWeapon
     , encodeWarband
     )
@@ -117,6 +119,33 @@ defaultWeapon =
     , strength = Modifier Mod 0
     , rend = Modifier Mod 0
     , specialRules = Nothing
+    }
+
+
+defaultProfile : Profile
+defaultProfile =
+    { name = "<insert profile name>"
+    , kind = Hero
+    , movement = 0
+    , weaponSkill = 0
+    , ballisticSkill = 0
+    , strength = 0
+    , toughness = 0
+    , wounds = 0
+    , initiative = 0
+    , attacks = 0
+    , leadership = 0
+    , specialRules = Nothing
+    }
+
+
+defaultUnit : Unit
+defaultUnit =
+    { count = 1
+    , name = "<insert character name>"
+    , xp = 0
+    , profile = defaultProfile
+    , equipment = []
     }
 
 

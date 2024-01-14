@@ -55,6 +55,7 @@ import Warband
         , decodeUnitKindStr
         , decodeWarband
         , decodeWeaponKindStr
+        , defaultUnit
         , defaultWeapon
         , encodeWarband
         )
@@ -772,12 +773,22 @@ viewAndEditWarbandNotes notes =
     ]
 
 
+addUnitButton : Html Msg
+addUnitButton =
+    let
+        addUnitMsg =
+            EditWarband (\warband -> { warband | units = warband.units ++ [ defaultUnit ] })
+    in
+    button [ onClick addUnitMsg ] [ text "Add Unit" ]
+
+
 viewAndEditWarband : Warband -> List (Html Msg)
 viewAndEditWarband warband =
     [ h2 [] [ headerCell "Name" (warbandStringInput warband.name warbandName) ]
     , p [] [ headerCell "Gold" (warbandIntInput warband.treasury.gold (warbandTreasury << treasuryGold)) ]
     , p [] [ headerCell "Wyrdstone" (warbandIntInput warband.treasury.wyrdstone (warbandTreasury << treasuryWyrdstone)) ]
     , h3 [] [ text "Units" ]
+    , addUnitButton
     ]
         ++ List.indexedMap viewAndEditUnit warband.units
         ++ viewAndEditWarbandNotes warband.notes
