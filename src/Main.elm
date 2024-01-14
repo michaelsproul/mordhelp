@@ -44,14 +44,17 @@ import Warband
     exposing
         ( Equipment(..)
         , Modifier(..)
+        , ModifierKind(..)
         , Profile
         , Unit
         , UnitKind(..)
         , Warband
         , WeaponKind(..)
         , WeaponStrength
+        , decodeModifierKindStr
         , decodeUnitKindStr
         , decodeWarband
+        , decodeWeaponKindStr
         , defaultWeapon
         , encodeWarband
         )
@@ -389,10 +392,10 @@ viewUnitMatchup unit enemyUnitsByWsToughness enemyUnitsByToughness =
 
         effectiveStrength weapon =
             case weapon.strength of
-                ModifierAbs n ->
+                Modifier Abs n ->
                     n
 
-                ModifierMod n ->
+                Modifier Mod n ->
                     unit.profile.strength + n
 
         toWound weapon toughness =
@@ -404,14 +407,11 @@ viewUnitMatchup unit enemyUnitsByWsToughness enemyUnitsByToughness =
                     rendByStrength (effectiveStrength weapon)
             in
             case weapon.rend of
-                Just (ModifierAbs n) ->
+                Modifier Abs n ->
                     n
 
-                Just (ModifierMod n) ->
+                Modifier Mod n ->
                     rend + n
-
-                Nothing ->
-                    rend
 
         getRend weapon =
             td [] [ text <| renderRend <| effectiveRend weapon ]
@@ -530,6 +530,20 @@ unitKindSelectOptions kind =
     ]
 
 
+weaponKindSelectOptions : WeaponKind -> List (Html Msg)
+weaponKindSelectOptions kind =
+    [ option [ selected (kind == Melee) ] [ text "melee" ]
+    , option [ selected (kind == Ballistic) ] [ text "ballistic" ]
+    ]
+
+
+modifierKindSelectOptions : ModifierKind -> List (Html Msg)
+modifierKindSelectOptions mod =
+    [ option [ selected (mod == Mod) ] [ text "mod" ]
+    , option [ selected (mod == Abs) ] [ text "abs" ]
+    ]
+
+
 superGenericEdit parser event accessor string =
     case parser string of
         Just value ->
@@ -630,6 +644,16 @@ equipmentStringInput idx =
     genericStringInput (EditEquipment idx)
 
 
+weaponKindSelect idx initialValue accessor =
+    select [ onInput <| superGenericEdit decodeWeaponKindStr (EditEquipment idx) accessor ]
+        (weaponKindSelectOptions initialValue)
+
+
+modifierKindSelect idx equipment accessor =
+    select [ onInput <| superGenericEdit decodeModifierKindStr (EditEquipment idx) accessor ]
+        (modifierKindSelectOptions (get accessor equipment))
+
+
 viewProfileStatBlock : Int -> Profile -> List (Html Msg)
 viewProfileStatBlock idx profile =
     let
@@ -665,9 +689,22 @@ viewProfileStatBlock idx profile =
 
 
 viewAndEditEquipment : ( Int, Int ) -> Equipment -> List (Html Msg)
-viewAndEditEquipment idx (EquipmentWeapon weapon) =
-    [ tr []
-        [ equipmentStringInput idx weapon.name (equipmentWeapon << weaponName)
+viewAndEditEquipment idx equipment =
+    let
+        (EquipmentWeapon weapon) =
+            equipment
+    in
+    [ tr [] [ td [] [ equipmentStringInput idx weapon.name (equipmentWeapon << weaponName) ] ]
+    , tr [] [ td [] [ weaponKindSelect idx weapon.kind (equipmentWeapon << weaponKind) ] ]
+    , tr []
+        [ td [] [ text "Strength: " ]
+        , td [] [ modifierKindSelect idx equipment (equipmentWeapon << weaponStrength << modifierKind) ]
+        , td [] [ equipmentIntInput idx (get modifierValue weapon.strength) (equipmentWeapon << weaponStrength << modifierValue) ]
+        ]
+    , tr []
+        [ td [] [ text "Rend: " ]
+        , td [] [ modifierKindSelect idx equipment (equipmentWeapon << weaponRend << modifierKind) ]
+        , td [] [ equipmentIntInput idx (get modifierValue weapon.rend) (equipmentWeapon << weaponStrength << modifierValue) ]
         ]
     ]
 

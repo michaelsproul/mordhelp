@@ -1,14 +1,17 @@
 module Warband exposing
     ( Equipment(..)
     , Modifier(..)
+    , ModifierKind(..)
     , Profile
     , Unit
     , UnitKind(..)
     , Warband
     , WeaponKind(..)
     , WeaponStrength
+    , decodeModifierKindStr
     , decodeUnitKindStr
     , decodeWarband
+    , decodeWeaponKindStr
     , defaultWeapon
     , encodeWarband
     )
@@ -54,9 +57,13 @@ type WeaponKind
     | Ballistic
 
 
+type ModifierKind
+    = Mod
+    | Abs
+
+
 type Modifier
-    = ModifierAbs Int
-    | ModifierMod Int
+    = Modifier ModifierKind Int
 
 
 type alias WeaponStrength =
@@ -71,7 +78,7 @@ type alias Weapon =
     { name : String
     , kind : WeaponKind
     , strength : WeaponStrength
-    , rend : Maybe WeaponRend
+    , rend : WeaponRend
     , specialRules : Maybe (List String)
     }
 
@@ -107,8 +114,8 @@ defaultWeapon : Weapon
 defaultWeapon =
     { name = "Unarmed strike"
     , kind = Melee
-    , strength = ModifierMod 0
-    , rend = Nothing
+    , strength = Modifier Mod 0
+    , rend = Modifier Mod 0
     , specialRules = Nothing
     }
 
@@ -145,14 +152,19 @@ decodeUnitKind =
         ]
 
 
-decodeUnitKindStr : String -> Maybe UnitKind
-decodeUnitKindStr s =
-    case Decode.decodeString decodeUnitKind ("\"" ++ s ++ "\"") of
+decodeStr : Decoder a -> String -> Maybe a
+decodeStr decoder s =
+    case Decode.decodeString decoder ("\"" ++ s ++ "\"") of
         Ok kind ->
             Just kind
 
         Err _ ->
             Nothing
+
+
+decodeUnitKindStr : String -> Maybe UnitKind
+decodeUnitKindStr =
+    decodeStr decodeUnitKind
 
 
 encodeUnitKind : UnitKind -> E.Value
@@ -171,6 +183,11 @@ decodeWeaponKind =
         [ string |> Decode.andThen (decodeLiteralAsValue "melee" Melee)
         , string |> Decode.andThen (decodeLiteralAsValue "ballistic" Ballistic)
         ]
+
+
+decodeWeaponKindStr : String -> Maybe WeaponKind
+decodeWeaponKindStr =
+    decodeStr decodeWeaponKind
 
 
 encodeWeaponKind : WeaponKind -> E.Value
@@ -218,39 +235,44 @@ encodeProfile profile =
             ++ encodeMaybeField "specialRules" profile.specialRules (E.list E.string)
 
 
+decodeModifierKind : Decoder ModifierKind
+decodeModifierKind =
+    Decode.oneOf
+        [ string |> Decode.andThen (decodeLiteralAsValue "mod" Mod)
+        , string |> Decode.andThen (decodeLiteralAsValue "abs" Abs)
+        ]
+
+
 decodeModifier : Decoder Modifier
 decodeModifier =
     string
         |> Decode.andThen
             (\s ->
-                if String.startsWith "mod" s then
-                    case String.toInt (String.dropLeft 3 s) of
-                        Just n ->
-                            Decode.succeed (ModifierMod n)
+                let
+                    ( s1, s2 ) =
+                        ( String.left 3 s, String.dropLeft 3 s )
+                in
+                case ( decodeModifierKindStr s1, String.toInt s2 ) of
+                    ( Just kind, Just n ) ->
+                        Decode.succeed <| Modifier kind n
 
-                        Nothing ->
-                            Decode.fail <| "invalid modifier: " ++ s
-
-                else if String.startsWith "abs" s then
-                    case String.toInt (String.dropLeft 3 s) of
-                        Just n ->
-                            Decode.succeed (ModifierAbs n)
-
-                        Nothing ->
-                            Decode.fail <| "invalid absolute modifier: " ++ s
-
-                else
-                    Decode.fail <| "invalid modifier: " ++ s
+                    _ ->
+                        Decode.fail <| "invalid modifier: " ++ s
             )
+
+
+decodeModifierKindStr : String -> Maybe ModifierKind
+decodeModifierKindStr =
+    decodeStr decodeModifierKind
 
 
 encodeModifier : Modifier -> E.Value
 encodeModifier modifier =
     case modifier of
-        ModifierAbs n ->
+        Modifier Abs n ->
             E.string <| "abs" ++ String.fromInt n
 
-        ModifierMod n ->
+        Modifier Mod n ->
             E.string <| "mod" ++ String.fromInt n
 
 
@@ -269,7 +291,7 @@ decodeEquipment =
         |> required "name" string
         |> required "kind" decodeWeaponKind
         |> required "strength" decodeModifier
-        |> optional "rend" (maybe decodeModifier) Nothing
+        |> optional "rend" decodeModifier (Modifier Mod 0)
         |> optional "specialRules" (maybe (list string)) Nothing
 
 
@@ -282,12 +304,20 @@ encodeEquipment equipment =
 
 encodeWeapon : Weapon -> E.Value
 encodeWeapon weapon =
+    let
+        maybeRend =
+            if weapon.rend == Modifier Mod 0 then
+                Nothing
+
+            else
+                Just weapon.rend
+    in
     E.object <|
         [ ( "name", E.string weapon.name )
         , ( "kind", encodeWeaponKind weapon.kind )
         , ( "strength", encodeModifier weapon.strength )
         ]
-            ++ encodeMaybeField "rend" weapon.rend encodeModifier
+            ++ encodeMaybeField "rend" maybeRend encodeModifier
             ++ encodeMaybeField "specialRules" weapon.specialRules (E.list E.string)
 
 

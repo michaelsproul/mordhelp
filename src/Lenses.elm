@@ -1,7 +1,7 @@
 module Lenses exposing (..)
 
 import Accessors exposing (makeOneToOne)
-import Warband exposing (Equipment(..), Profile, Unit, Warband)
+import Warband exposing (Equipment(..), Modifier(..), Profile, Unit, Warband)
 
 
 profileName =
@@ -140,3 +140,33 @@ weaponName =
     makeOneToOne
         .name
         (\change record -> { record | name = change record.name })
+
+
+weaponKind =
+    makeOneToOne
+        .kind
+        (\change record -> { record | kind = change record.kind })
+
+
+weaponStrength =
+    makeOneToOne
+        .strength
+        (\change record -> { record | strength = change record.strength })
+
+
+weaponRend =
+    makeOneToOne
+        .rend
+        (\change record -> { record | rend = change record.rend })
+
+
+modifierKind =
+    makeOneToOne
+        (\(Modifier kind _) -> kind)
+        (\change (Modifier kind n) -> Modifier (change kind) n)
+
+
+modifierValue =
+    makeOneToOne
+        (\(Modifier _ n) -> n)
+        (\change (Modifier kind n) -> Modifier kind (change n))
