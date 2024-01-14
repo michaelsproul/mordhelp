@@ -1,8 +1,15 @@
 {
-  "name": "Cult of the Possessed",
+  "name": "Example Cult of the Possessed",
+  "treasury": {
+    "gold": 100,
+    "wyrdstone": 3,
+    "equipment": []
+  },
   "units": [
-      {
+  {
+      "name": "Bob",
       "count": 1,
+      "xp": 0,
       "profile": {
         "name": "Magister",
         "kind": "hero",
@@ -19,7 +26,9 @@
       "equipment": []
     },
     {
+      "name": "Possessed",
       "count": 1,
+      "xp": 0,
       "profile": {
         "name": "The Possessed",
         "kind": "hero",
@@ -36,7 +45,9 @@
       "equipment": []
     },
     {
+      "name": "Mutant",
       "count": 1,
+      "xp": 0,
       "profile": {
         "name": "Mutant",
         "kind": "hero",

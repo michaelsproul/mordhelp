@@ -1,0 +1,9 @@
+{
+  "name": "New Warband",
+  "treasury": {
+    "gold": 500,
+    "wyrdstone": 0,
+    "equipment": []
+  },
+  "units": []
+}
