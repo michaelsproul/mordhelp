@@ -145,7 +145,7 @@ defaultUnit =
     , name = "<insert character name>"
     , xp = 0
     , profile = defaultProfile
-    , equipment = []
+    , equipment = [ EquipmentWeapon defaultWeapon ]
     }
 
 

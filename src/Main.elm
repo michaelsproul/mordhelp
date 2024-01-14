@@ -705,7 +705,7 @@ viewAndEditEquipment idx equipment =
     , tr []
         [ td [] [ text "Rend: " ]
         , td [] [ modifierKindSelect idx equipment (equipmentWeapon << weaponRend << modifierKind) ]
-        , td [] [ equipmentIntInput idx (get modifierValue weapon.rend) (equipmentWeapon << weaponStrength << modifierValue) ]
+        , td [] [ equipmentIntInput idx (get modifierValue weapon.rend) (equipmentWeapon << weaponRend << modifierValue) ]
         ]
     ]
 
@@ -719,6 +719,18 @@ viewUnitEquipment unitIdx equipment =
 headerCell : String -> Html Msg -> Html Msg
 headerCell label content =
     div [] [ text (label ++ ": "), content ]
+
+
+addEquipmentButton : Int -> Html Msg
+addEquipmentButton idx =
+    let
+        newEquipment =
+            EquipmentWeapon defaultWeapon
+
+        addEquipmentMsg =
+            EditUnit idx (\unit -> { unit | equipment = unit.equipment ++ [ newEquipment ] })
+    in
+    button [ onClick addEquipmentMsg ] [ text "Add Equipment" ]
 
 
 viewAndEditUnit : Int -> Unit -> Html Msg
@@ -754,7 +766,9 @@ viewAndEditUnit idx unit =
             viewProfileStatBlock idx unit.profile
 
         equipmentRows =
-            [ tr [] [ td [ colspan width ] [ h5 [] [ text <| unit.name ++ "'s Equipment" ] ] ] ]
+            [ tr [] [ td [ colspan width ] [ h5 [] [ text <| unit.name ++ "'s Equipment" ] ] ]
+            , tr [] [ td [ colspan 2 ] [ addEquipmentButton idx ] ]
+            ]
                 ++ viewUnitEquipment idx unit.equipment
 
         rows =
