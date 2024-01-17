@@ -745,6 +745,12 @@ viewAndEditUnit idx unit =
         nameRow =
             tr [] [ td [ colspan width ] [ headerCell "Name" (stringInput unit.name idx unitName) ] ]
 
+        profileNameRow =
+            tr []
+                [ td [ colspan width ]
+                    [ headerCell "Profile" (stringInput unit.profile.name idx (unitProfile << profileName)) ]
+                ]
+
         kindRow =
             tr []
                 [ td [ colspan width ]
@@ -772,7 +778,7 @@ viewAndEditUnit idx unit =
                 ++ viewUnitEquipment idx unit.equipment
 
         rows =
-            [ headerRow, nameRow, kindRow, countRow, xpRow ] ++ profileRows ++ equipmentRows
+            [ headerRow, nameRow, profileNameRow, kindRow, countRow, xpRow ] ++ profileRows ++ equipmentRows
     in
     table [ class "unit" ]
         [ tbody [] rows ]
